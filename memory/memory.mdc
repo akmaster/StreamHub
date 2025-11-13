@@ -1,0 +1,5924 @@
+---
+alwaysApply: true
+---
+
+## A - Architecture & Abstraction
+
+**Yaklaşım: Düşünce Kapsülleri (Thought Capsules) ve Full Modular Yapı**
+
+Mimari, katı katmanlar yerine **düşünce kapsülleri** olarak düşünülür. Her kapsül kendi evreninde yaşar, dışarıyla sadece kontrollü portallar üzerinden konuşur.
+
+```typescript
+// Düşünce kapsülü yaklaşımı - Full Modular Yapı
+interface ThoughtCapsule<T> {
+  core: T; // Öz kimlik
+  portals: Portal[]; // Dış dünyayla konuşma noktaları
+  shields: Shield[]; // Korumalar
+  echo: (message: Message) => Response; // Yankı mekanizması
+  dependencies: DependencyRegistry; // Bağımlılık kayıt defteri
+  exports: ExportRegistry; // Dışa aktarılan arayüzler
+  lifecycle: ModuleLifecycle; // Yaşam döngüsü yönetimi
+}
+
+// Kapsül türleri
+type CapsuleType =
+  | 'origin' // Başlangıç noktası - kullanıcı girişleri
+  | 'processor' // Dönüştürücü - veri işleme
+  | 'memory' // Hafıza - durum saklama
+  | 'observer' // Gözlemci - olayları izler
+  | 'bridge' // Köprü - diğer kapsülleri birleştirir
+  | 'plugin' // Eklenti - genişletilebilir modül
+  | 'composable'; // Birleştirilebilir - diğer modüllerle kompozisyon
+
+// Full Modular Yapı İlkeleri
+interface ModularArchitecture {
+  // 1. Bağımsızlık (Independence)
+  independence: {
+    selfContained: true; // Kendi içinde tam
+    noDirectDependencies: true; // Direkt bağımlılık yok
+    interfaceDriven: true; // Interface üzerinden iletişim
+  };
+
+  // 2. Kompozisyon (Composition)
+  composition: {
+    pluggable: true; // Takılabilir/çıkarılabilir
+    composable: true; // Birleştirilebilir
+    replaceable: true; // Değiştirilebilir
+  };
+
+  // 3. Arayüz Sözleşmesi (Interface Contract)
+  contract: {
+    explicit: true; // Açık sözleşme
+    versioned: true; // Versiyonlu
+    backwardCompatible: true; // Geriye uyumlu
+  };
+
+  // 4. Yaşam Döngüsü (Lifecycle)
+  lifecycle: {
+    initialize: () => void;
+    activate: () => void;
+    deactivate: () => void;
+    destroy: () => void;
+  };
+}
+```
+
+**Özgün Mantra:** Her kapsül kendi DNA'sını taşır. Hiçbir kapsül başkasının görevini üstlenmez, sadece portal açarak iletişim kurar. Her modül tam bağımsızdır ve sadece kontrat üzerinden konuşur.
+
+**Full Modular Yapı Karar Süreci:**
+
+```
+Yeni kod yazılıyor
+  ↓
+Bu bir modül mü yoksa fonksiyon mu?
+  ├─> Bağımsız evreni var mı? → Modül (Capsule)
+  ├─> Başkasına bağımlı mı? → Fonksiyon, modül içinde olmalı
+  └─> İki modül arasında mı? → Bridge veya Interface oluştur
+
+Modül oluşturuluyor
+  ↓
+Tam bağımsız mı? (kendi testleri, dokümantasyonu, yaşam döngüsü)
+  ├─> Evet → Full Modular Modül
+  └─> Hayır → Refactor et, bağımsızlaştır
+```
+
+**Full Modular Yapı Prensipleri:**
+
+1. **Tam Bağımsızlık (Full Independence)**
+
+   - Her modül kendi testlerini içerir
+   - Kendi dokümantasyonuna sahiptir
+   - Hiçbir modül diğerinin iç yapısını bilmez
+   - Sadece interface'ler üzerinden konuşur
+
+2. **Interface-Driven Design**
+
+   ```typescript
+   // ❌ Kötü: Direkt bağımlılık
+   import { Database } from './database';
+   class UserService {
+     constructor() {
+       this.db = new Database(); // Direkt bağımlılık!
+     }
+   }
+
+   // ✅ İyi: Interface üzerinden
+   interface IDataStore {
+     save<T>(data: T): Promise<void>;
+     find<T>(id: string): Promise<T>;
+   }
+
+   class UserService {
+     constructor(private store: IDataStore) {} // Interface injection
+   }
+
+   // Modül kayıt
+   const registry = new ModuleRegistry();
+   registry.register('userService', () => new UserService(registry.resolve('dataStore')));
+   ```
+
+3. **Dependency Injection & Registry Pattern**
+
+   ```typescript
+   // Modül kayıt sistemi
+   interface ModuleRegistry {
+     register<T>(name: string, factory: () => T): void;
+     resolve<T>(name: string): T;
+     unregister(name: string): void;
+     list(): string[];
+   }
+
+   // Kullanım
+   const modules = new ModuleRegistry();
+   modules.register('logger', () => new Logger());
+   modules.register('dataStore', () => new DataStore());
+   modules.register('userService', () => new UserService(modules.resolve('dataStore')));
+   ```
+
+4. **Composable Architecture**
+
+   ```typescript
+   // Modüller birleştirilebilir
+   interface ComposableModule {
+     compose(other: Module): ComposedModule;
+     canComposeWith(other: Module): boolean;
+   }
+
+   // Örnek: Filtreleme modülü + Sıralama modülü = Gelişmiş listeleme
+   const filtering = new FilteringModule();
+   const sorting = new SortingModule();
+   const advancedListing = filtering.compose(sorting);
+   ```
+
+5. **Plugin System**
+
+   ```typescript
+   // Eklenti sistemi - modüller runtime'da eklenip çıkarılabilir
+   interface PluginModule {
+     name: string;
+     version: string;
+     hooks: HookRegistry;
+     activate(): void;
+     deactivate(): void;
+   }
+
+   // Plugin yöneticisi
+   class PluginManager {
+     load(plugin: PluginModule): void;
+     unload(pluginName: string): void;
+     execute(hook: string, data: unknown): void;
+   }
+   ```
+
+---
+
+## B - Behavior & Boundaries
+
+**Yaklaşım: Mıknatıs Alanları (Magnetic Fields)**
+
+Sistem sınırları, mıknatısların manyetik alanları gibi çalışır. Güçlü alanlar yakındakileri çeker, zayıf alanlar uzak tutar.
+
+```javascript
+// Manyetik alan metaforu
+const createMagneticField = (component) => {
+  const fieldStrength = calculateCohesion(component);
+  const attractionZone = fieldStrength * 0.7; // Çekim bölgesi
+  const repulsionZone = fieldStrength * 1.3; // İtme bölgesi
+
+  return {
+    attracts: (other) => distance(component, other) < attractionZone,
+    repels: (other) => distance(component, other) > repulsionZone,
+    neutral: (other) => attractionZone <= distance(component, other) <= repulsionZone,
+  };
+};
+
+// Kullanım: Komponentler kendi manyetik alanlarını yönetir
+const publicAPI = createMagneticField(component).attracts.bind(component);
+const internalLogic = createMagneticField(component).repels.bind(component);
+```
+
+**Özgün Kural:** Bir şey alanını ihlal ediyorsa, ya alan güçlendirilmeli ya da o şey başka alana taşınmalı.
+
+**Görselleştirme:**
+
+```
+┌─────────────────────────────┐
+│  Component (Manyetik Çekirdek)│
+│  ┌──────────────────────┐   │
+│  │  Güçlü Çekim (Public) │   │
+│  └──────────────────────┘   │
+│  ┌──────────────────────┐   │
+│  │  Nötr Bölge          │   │
+│  └──────────────────────┘   │
+│  ┌──────────────────────┐   │
+│  │  İtme Bölgesi (Private)│  │
+│  └──────────────────────┘   │
+└─────────────────────────────┘
+```
+
+---
+
+## C - Context & Communication
+
+**Yaklaşım: Hikaye Anlatımı (Narrative Threads)**
+
+Kod bir hikaye anlatır. Her commit bir bölüm, her PR bir bölüm, her deploy bir bölümün yayınlanmasıdır.
+
+**Özgün İletişim Prensipleri:**
+
+1. **Düşünce Zincirleri (Thought Chains)**
+
+   - Her commit bir düşünce zincirinin halkası
+   - Zincir kırılırsa, hikaye kaybolur
+   - Atomic değil, **bağlamsal bütünlük** önemli
+
+2. **Hikaye Dokusu (Story Weave)**
+
+   ```yaml
+   narrative_thread:
+     why: 'Neden bu yol seçildi?'
+     what: 'Ne değişti?'
+     who: 'Kim etkilendi?'
+     when: 'Hangi an?'
+     how: 'Nasıl çözüldü?'
+     tension: 'Hangi sorun çözüldü?'
+     resolution: 'Nasıl sonlandı?'
+   ```
+
+3. **Yorum Felsefesi: Kod içinde hikaye**
+
+   ```javascript
+   // Klişe yorum:
+   // User ID'yi al
+   const userId = getUserId();
+
+   // Özgün yorum:
+   // Kullanıcı kimliğini keşfet - bu, tüm yolculuğun başlangıç noktası
+   const userId = getUserId(); // Eğer burada hata varsa, tüm sistem durur
+   ```
+
+**Özgün İletişim Döngüsü:**
+
+```
+Fikir → Hikaye → Kod → Test → Anlatı (PR) → Yayın (Deploy) → İzleme
+    ↑                                                              ↓
+    └─────────────────── Öğrenme ve Hikayeyi Güncelle ────────────┘
+```
+
+**Derin Çalışma Ritüelleri:**
+
+- 🌅 Sabah: Yeni hikayeler yaz (yeni feature'lar)
+- 🌆 Öğle: Hikayeleri gözden geçir (code review)
+- 🌃 Akşam: Hikayeleri öğren (teknoloji araştırması)
+
+---
+
+## D - Data & Decisions
+
+**Yaklaşım: Veri DNA'sı ve Organizmalar**
+
+Veri organizmalar gibi davranır. Her veri türü farklı bir canlı türü gibidir - bazıları hızlı büyür, bazıları yavaş yaşar, bazıları gruplar halinde yaşar.
+
+**Veri Ekosistemi Haritası:**
+
+```
+                        ┌─────────────────┐
+                        │   Structured    │
+                        │   (Düzenli Orman)│
+                        │   - SQL         │
+                        └────────┬────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────┐
+        │                        │                        │
+┌───────▼────────┐      ┌────────▼──────┐      ┌─────────▼────────┐
+│ Semi-Structured│      │ Unstructured   │      │   Real-time      │
+│ (Vahşi Doğa)   │      │ (Okyanus)      │      │   (Nehir)        │
+│ - Document DB  │      │ - Object Store │      │ - Stream Process │
+└────────────────┘      └────────────────┘      └──────────────────┘
+```
+
+**Özgün Karar Ağacı:**
+
+```
+Veri geldi → Ne tür bir organizma bu?
+  ├─> Hızlı büyüyor, kısa ömür → Cache (Hızlı yaşam)
+  ├─> Yavaş ama kalıcı → Database (Uzun ömür)
+  ├─> Grup halinde geliyor → Batch (Toplu işleme)
+  ├─> Sürekli akıyor → Stream (Nehir)
+  └─> Dağınık ve belirsiz → Object Store (Depo)
+```
+
+**Karar Prensibi:** Veri organizması, sistemin ekosistemini belirler. Yanlış habitata yerleştirilmiş organizma ölür.
+
+---
+
+## 🎨 Design & Distinction
+
+**Özgün Tasarım Manifestosu:**
+
+```
+Klişelerden kaçın  ──→  Özgünlük bul
+Kopyalamadan   ──→  İnnovasyon yarat
+Trend takip etme ──→  Trend belirle
+```
+
+**Tasarım DNA'sı:**
+
+```typescript
+interface DesignPhilosophy {
+  originality: 'Her proje kendi kimliğini taşımalı';
+  purpose: 'Form fonksiyonu takip eder, ama estetik değer yaratır';
+  constraint: 'Sınırlar yaratıcılığı tetikler';
+  emotion: 'Tasarım bir duygu uyandırmalı';
+  timeless: 'Modadan bağımsız, zamansız çözümler';
+}
+```
+
+**Özgün Tasarım Karar Ağacı:**
+
+```
+Başlangıç: Klişe pattern görüyorum
+    ↓
+Soru: Bu gerçekten en iyi çözüm mü?
+    ↓
+    ├─> Evet ama sıkıcı → Özgün varyasyon yarat
+    ├─> Hayır, daha iyi var → Yenilikçi yaklaşım dene
+    └─> Bilmiyorum → Dene, öğren, iyileştir
+```
+
+**Tasarım Prensipleri:**
+
+1. **Identity Over Imitation**
+
+   - Her interface'in kendine özgü karakteri olmalı
+   - Inspirasyon al ama kopyalama
+   - Örnek: "Bootstrap kullanmalı mıyım?" → "Bunu nasıl kendim yapabilirim?"
+
+2. **Semantic Over Stylistic**
+
+   - Renkler ve şekiller anlam taşımalı
+   - Her görsel element bir amaca hizmet etmeli
+   - Örnek: Gradient sadece "güzel görünmek" için değil, hiyerarşi kurmak için
+
+3. **Interaction Over Decoration**
+
+   - Animasyonlar boş değil, bilgi aktarmalı
+   - Her etkileşim bir geri bildirim vermeli
+   - Örnek: Hover efektleri sadece "cool" değil, "tıklanabilir" hissi yaratmalı
+
+4. **Constraint Breeds Creativity**
+
+   - Sınırlılıklar içinde çözüm bulmak yaratıcılığı artırır
+   - CSS Grid yerine Flexbox ile ne yapabilirim?
+   - Sadece 3 renk ile ne kadar çok ifade edebilirim?
+
+5. **Timeless Over Trendy**
+   - Bugün moda olan, yarın eski görünür
+   - Temel prensiplere dayalı tasarım yap
+   - Örnek: Glassmorphism yerine ne zaman kullanılacağını bil
+
+**Anti-Pattern Checklist:**
+
+```javascript
+const isCliché = {
+  gradientBackground: 'Linear gradient arka plan? Düşün!',
+  roundedCorners: 'Her yerde border-radius? Alternatif?',
+  boxShadow: 'Gölge efekti mi lazım yoksa derinlik mi?',
+  hoverLift: 'Transform translateY yerine başka ne?',
+  centerCard: 'Merkeze kart yerine başka layout?',
+  monospaceTimer: 'Gerçekten tek seçenek bu mu?',
+};
+```
+
+**Özgün Tasarım Süreci:**
+
+```
+1. Research → Mevcut çözümleri gör ama taklit etme
+2. Deconstruct → Her elementin amacını sorgula
+3. Reimagine → Farklı bir yaklaşım dene
+4. Validate → Kullanıcı için gerçekten daha iyi mi?
+5. Iterate → Sürekli iyileştir ama kimliğini koru
+```
+
+**Mantra:** "Benzersiz ol, kopya değil. Özgün ol, taklit değil. Anlamlı ol, boş değil."
+
+---
+
+## E - Events & Effects
+
+**Yaklaşım: Dalga Teorisi (Wave Theory)**
+
+Olaylar dalgalar gibi yayılır. Saf fonksiyonlar su yüzeyi gibi pürüzsüzdür, side effect'ler ise suya atılan taşlar gibi dalgalar yaratır.
+
+```typescript
+// Dalga metaforu
+interface Wave<T> {
+  origin: EventSource; // Dalganın kaynağı
+  amplitude: number; // Gücü
+  frequency: number; // Sıklığı
+  propagates: Wave<T>[]; // Yayılan dalgalar
+  attenuates: (distance: number) => Wave<T>; // Zayıflama
+}
+
+// Saf fonksiyon = Durgun su
+type PureFunction<T, R> = (input: T) => R; // Hiç dalga yaratmaz
+
+// Side effect = Taş atıldı
+type SideEffect = (wave: Wave<unknown>) => void; // Dalga yaratır
+
+// Özgün kullanım
+const createRipple = <T>(event: Event<T>): Wave<T> => {
+  return {
+    origin: event.source,
+    amplitude: calculateImpact(event),
+    frequency: event.frequency,
+    propagates: [],
+    attenuates: (distance) => ({
+      ...wave,
+      amplitude: wave.amplitude / Math.pow(distance, 2), // Fizik yasası
+    }),
+  };
+};
+```
+
+**Özgün Felsefe:** Saf kodlar su gibi akıcıdır, kirli kodlar ise dalgalar yaratarak sistemi etkiler. Dalgaları kontrol et, sistemi sakin tut.
+
+**Dalga Yönetimi:**
+
+```typescript
+// Dalga yalıtımı
+const isolateWaves = <T>(effect: SideEffect) => {
+  const waveContainer = createIsolation();
+  return (event: Event<T>) => {
+    const wave = createRipple(event);
+    waveContainer.contain(wave);
+    effect(wave);
+  };
+};
+```
+
+---
+
+## F - Flow & Feedback
+
+**Yaklaşım: Ritim ve Nefes (Rhythm & Breath)**
+
+Geliştirme bir ritimdir. Yazma nefes almak, çalıştırma nefes vermek gibidir. Düzensiz nefes alırsan, sistem boğulur.
+
+**Özgün Feedback Döngüsü:**
+
+```
+        ┌─────────────┐
+        │   Nefes Al  │ ← Yaz (Create)
+        │  (Yazma)    │
+        └──────┬──────┘
+               │
+               ↓
+        ┌─────────────┐
+        │   Nefes Ver │ ← Çalıştır (Execute)
+        │  (Test/Run) │
+        └──────┬──────┘
+               │
+               ↓
+        ┌─────────────┐
+        │   Öğren     │ ← Gözlemle (Observe)
+        │  (Feedback) │
+        └──────┬──────┘
+               │
+               └──────→ Ritmi Ayarla (Adjust)
+```
+
+**Özgün Geliştirme Ritim Durumları:**
+
+- 🌊 **Akış (Flow):** Derin kodlama - uzun nefesler, sürekli ritim
+- 🌅 **Yansıma (Reflection):** Gözden geçirme - nefesi tut, düşün
+- 🌀 **Yeniden Başlatma (Reset):** Mola - nefes al, ritmi sıfırla
+- 🧭 **Yön Bulma (Navigation):** Planlama - bağlam değişimi, yeni nefes
+
+**Ritim Kuralları:**
+
+```typescript
+interface DevelopmentRhythm {
+  breathIn: 'Write code'; // Nefes al
+  breathOut: 'Test & Run'; // Nefes ver
+  hold: 'Review & Reflect'; // Nefes tut
+  reset: 'Break & Reset'; // Yeniden başla
+}
+
+// Sağlıklı ritim
+const healthyRhythm = {
+  breathDuration: '15-45 min', // Tek nefes süresi
+  holdDuration: '5-10 min', // Nefes tutma süresi
+  resetFrequency: '90 min', // Yeniden başlatma sıklığı
+};
+```
+
+---
+
+## G - Graph & Growth
+
+**Yaklaşım: Bilgi Ağı ve Büyüme Dalı (Knowledge Network & Growth Branch)**
+
+Bilgi bir ağacın dalları gibi büyür. Her dal farklı bir alan, yapraklar öğrendiklerin.
+
+**Özgün Bilgi Ağacı:**
+
+```
+        Merkez (Sen)
+           │
+    ┌──────┼──────┐
+    │      │      │
+  Ana Dal Ana Dal Ana Dal
+ (Language)(Framework)(Tool)
+    │      │      │
+    └──┬───┴───┬──┘
+       │       │
+    Yaprak  Yaprak
+  (Pattern)(Library)
+```
+
+**Özgün Öğrenme Stratejisi:**
+
+1. **Tohum At (Plant Seed)**
+
+   - Yeni bir alana ilk adım
+   - Küçük denemeler yap
+
+2. **Kök Sal (Grow Roots)**
+
+   - Derinlemesine öğren
+   - Temelleri güçlendir
+
+3. **Dal Uzat (Branch Out)**
+
+   - Komşu alanlara geç
+   - İlişkiler kur
+
+4. **Meyve Ver (Bear Fruit)**
+   - Öğrendiklerini paylaş
+   - Başkalarına öğret
+
+**Büyüme Haritası:**
+
+```typescript
+interface KnowledgeTree {
+  root: CoreExpertise;
+  branches: Branch[];
+  leaves: Leaf[];
+  connections: Connection[]; // Diğer ağaçlarla bağlantılar
+}
+
+type Branch = {
+  topic: string;
+  depth: number; // Ne kadar derinleştin
+  breadth: number; // Ne kadar genişledin
+  fruits: Project[]; // Ne ürettin
+};
+```
+
+---
+
+## H - Hypothesis & Habits
+
+**Yaklaşım: Deney ve Ritüel (Experiment & Ritual)**
+
+Her gün bir deneydir. Ritüeller deneylerin tekrarlanabilir kısmıdır.
+
+**Özgün Günlük Ritüeller:**
+
+- 🧪 **Sabah Deneyi (Morning Experiment):** Yeni bir şey dene (30 dak)
+- 🔍 **Öğle İncelemesi (Noon Review):** Başkalarının kodunu keşfet (30 dak)
+- 💡 **Akşam Tinkeri (Evening Tinker):** Side project üzerinde oyna
+- 📚 **Gece Okuması (Night Reading):** Teknoloji okuması
+- 🤔 **Derin Düşünce (Deep Thought):** Problem ayrıştırma egzersizi
+- 🧩 **Bulmaca Çözme (Puzzle Solving):** Debug bulmacaları
+
+**Özgün Hypothesis-Driven Geliştirme:**
+
+```typescript
+interface Experiment {
+  question: string; // Soru
+  hypothesis: string; // Varsayım
+  design: ExperimentDesign; // Deney tasarımı
+  execute: () => Result; // Çalıştır
+  measure: (result: Result) => Metric; // Ölç
+  learn: (metric: Metric) => Insight; // Öğren
+  iterate: (insight: Insight) => Experiment; // Yinele
+}
+
+// Örnek: Performans deneyi
+const performanceExperiment: Experiment = {
+  question: 'Bu optimizasyon gerçekten hızlandırıyor mu?',
+  hypothesis: "Cache eklemek response time'ı %30 azaltacak",
+  design: { control: 'Önceki versiyon', variant: 'Yeni versiyon' },
+  execute: () => runBenchmark(),
+  measure: (result) => calculateImprovement(result),
+  learn: (metric) => (metric > 0.25 ? 'Hipotez doğru' : 'Hipotez yanlış'),
+  iterate: (insight) => adjustHypothesis(insight),
+};
+```
+
+---
+
+## I - Interface & Isolation
+
+**Yaklaşım: Sınır Mimarisi (Boundary Architecture)**
+
+Interfaceler sınırlar gibi çalışır. Güçlü sınırlar korur, esnek sınırlar iletişim sağlar.
+
+```typescript
+// Sınır metaforu
+interface Boundary<T> {
+  guard: (input: T) => boolean; // Sınır muhafızı
+  translate: (input: T) => T; // Çeviri mekanizması
+  validate: (input: T) => Validation; // Doğrulama
+  transform: (input: T) => T; // Dönüştürme
+}
+
+// Anti-pattern: Sınırsız alan
+class GodObject {
+  // Her şeyi yapar, hiçbir sınırı yok
+  // → Kaos yaratır
+}
+
+// Özgün Pattern: Sınırlı Sorumluluklar
+interface FocusedBoundary<TInput, TOutput> {
+  responsibility: string; // Ne yapar
+  limits: Boundary<TInput>; // Sınırları
+  output: Boundary<TOutput>; // Çıktı sınırı
+  communicate: (other: Boundary<unknown, unknown>) => void; // Diğerleriyle konuş
+}
+
+// Örnek
+interface OrderProcessor extends FocusedBoundary<Order, ProcessedOrder> {
+  responsibility: 'Sipariş işleme';
+  limits: { maxItems: 100; validPayment: true };
+  output: { status: 'processed' | 'failed'; receipt: Receipt };
+}
+```
+
+**Özgün İzolasyon Kuralı:** Eğer bir şey sınırını aşamıyorsa, ya sınır çok katı ya da o şey yanlış yerde. İzolasyon test edilebilirlik demektir.
+
+---
+
+## J - Journey & Judgment
+
+**Yaklaşım: Yolculuk Haritası ve Karar Pusulası (Journey Map & Decision Compass)**
+
+Geliştirici yolculuğu bir maceradır. Her aşama farklı bir toprak, farklı beceriler gerektirir.
+
+**Özgün Yolculuk Haritası:**
+
+```
+Köy (Junior)
+  ↓ Keşfet
+Kasaba (Practitioner)
+  ↓ Ustalaş
+Şehir (Craftsman)
+  ↓ Mimarlık Yap
+Başkent (Architect)
+  ↓ Öğret
+Akademi (Mentor)
+  ↓ Vizyon Oluştur
+Üniversite (Visionary)
+  ↓
+Zirve (Thought Leader)
+```
+
+**Her Aşamanın Özellikleri:**
+
+```
+Köy:       Kod yazmayı öğrenir
+Kasaba:    Pattern'leri görür
+Şehir:     Sistemleri anlar
+Başkent:   Sistemleri tasarlar
+Akademi:   İnsanları yetiştirir
+Üniversite: Vizyon belirler
+Zirve:     Yön verir
+```
+
+**Özgün Karar Pusulası:**
+
+```typescript
+interface DecisionCompass {
+  north: 'Kullanıcı değeri'; // Her zaman kuzeye bak
+  south: 'Teknik borç'; // Güneyi kontrol et
+  east: 'İnovasyon'; // Doğuda yeni fırsatlar
+  west: 'Stabilite'; // Batıda güvenlik
+  current: Position;
+  destination: Goal;
+  navigate: () => Decision;
+}
+
+// Karar anı
+const makeDecision = (compass: DecisionCompass) => {
+  const factors = {
+    userValue: compass.north,
+    techDebt: compass.south,
+    innovation: compass.east,
+    stability: compass.west,
+  };
+
+  return calculateOptimalPath(factors, compass.destination);
+};
+```
+
+**Judgment Çerçevesi:**
+
+- Hız vs Kalite? → Kullanıcı acelesi var mı?
+- Özellik vs Refactor? → Teknik borç ne kadar?
+- Mükemmel vs Gönder? → Zaman kısıtı ne?
+- Teknoloji vs Çözüm? → Problem ne, teknoloji mi amaç?
+
+---
+
+## K - Knowledge & Kinetic
+
+**Yaklaşım: Bilgi ve Hareket Enerjisi**
+
+Bilgi statik değil, kinetik bir enerjidir. Harekete geçmezse ölür.
+
+**Özgün Bilgi Türleri:**
+
+- 📖 **Dokümante (Written):** Yazılı bilgi - kitaplar, dokümantasyon
+- 🧠 **Deneyimsel (Experiential):** Yaşanmış bilgi - hatalardan öğrenme
+- 🔄 **Dinamik (Dynamic):** Değişken bilgi - trendler, güncellemeler
+- 💎 **Örtük (Tacit):** Söylenemeyen bilgi - sezgiler, pattern tanıma
+
+**Kinetik Enerji Prensipleri:**
+
+```typescript
+interface KnowledgeEnergy {
+  potential: 'Pasif öğrenme'; // Kitap okuma, video izleme
+  kinetic: 'Aktif yapma'; // Kod yazma, proje geliştirme
+  transfer: 'Paylaşma'; // Öğretme, blog yazma
+  transformation: 'İnovasyon'; // Yeni şeyler yaratma
+}
+
+// Enerji dönüşümü
+const transformKnowledge = (knowledge: KnowledgeEnergy) => {
+  // Pasif → Aktif → Paylaş → Yarat
+  return {
+    from: knowledge.potential,
+    to: knowledge.kinetic,
+    then: knowledge.transfer,
+    finally: knowledge.transformation,
+  };
+};
+```
+
+**Özgün Öğrenme Hiyerarşisi:**
+
+```
+Pasif Tüketim (En düşük enerji)
+    ↓ Aktif Öğrenme
+Aktif Yapma (Yüksek enerji)
+    ↓ Paylaşma
+Bilgi Transferi (Enerji yayma)
+    ↓ Yaratma
+İnovasyon (En yüksek enerji)
+```
+
+---
+
+## L - Language & Layer
+
+**Yaklaşım: Dil Seçimi ve Yapı Felsefesi**
+
+Katmanlar, binaların katları gibi değil, ekosistem katmanları gibi düşünülür. Her katman kendi organizmalarıyla yaşar.
+
+**Özgün Ekosistem Yaklaşımı:**
+
+```
+┌─────────────────────────────────────┐
+│   Görünüm Katmanı (Surface Layer)   │ ← Kullanıcı görür
+│   └─ UI/UX organizmaları             │
+├─────────────────────────────────────┤
+│   İş Katmanı (Business Layer)       │ ← Mantık organizmaları
+│   └─ İş kuralları ve akışlar         │
+├─────────────────────────────────────┤
+│   Çekirdek Katman (Core Layer)       │ ← Kalp organizmaları
+│   └─ Domain mantığı, varlıklar       │
+├─────────────────────────────────────┤
+│   Altyapı Katmanı (Ground Layer)     │ ← Toprak organizmaları
+│   └─ Veri, network, dosya sistemi    │
+└─────────────────────────────────────┘
+```
+
+**Özgün Dil Seçimi Kriterleri:**
+
+1. **Problem DNA'sı:** Problem ne tür bir organizma?
+
+   - Hızlı → JavaScript/Python
+   - Güvenli → Rust/Go
+   - Matematiksel → Julia/Python
+   - Web → JavaScript/TypeScript
+
+2. **Takım Ekosistemi:** Hangi organizmalar zaten var?
+
+   - Mevcut bilgi → Aynı dil
+   - Yeni öğrenme → Öğrenilebilir dil
+
+3. **Ekosistem Olgunluğu:** Bu dilin ekosistemi sağlıklı mı?
+
+   - Paket yönetimi
+   - Topluluk desteği
+   - Dokümantasyon kalitesi
+
+4. **Uzun Vadeli Yaşam:** Bu dil 5 yıl sonra hala var mı?
+
+**Özgün Karar Süreci:**
+
+```
+Dil seçimi gerekli
+  ↓
+Problem tipini belirle
+  ↓
+Ekosistem sağlığını kontrol et
+  ↓
+Takım yetkinliğini değerlendir
+  ↓
+Uzun vadeli vizyonu göz önünde bulundur
+  ↓
+Dil seç
+```
+
+---
+
+## M - Mindset & Mutation & Modularity
+
+**Yaklaşım: Zihniyet Modları, Kod Evrimi ve Modülerlik**
+
+Geliştirici farklı zihniyetler arasında geçiş yapar. Kod ise sürekli evrim geçirir. Her kod parçası full modular yapıda olmalıdır.
+
+**Özgün Zihniyet Modları:**
+
+- 🔨 **Yapıcı Modu (Builder Mode):** "Bunu nasıl inşa edebilirim?" → Full modular yapıda
+- 🔬 **Araştırmacı Modu (Researcher Mode):** "Neden böyle davranıyor?" → Modül bağımlılıklarını anla
+- 🎨 **Sanatçı Modu (Artist Mode):** "Bunu nasıl daha zarif yapabilirim?" → Interface'leri güzelleştir
+- ⚖️ **Yargıç Modu (Judge Mode):** "Bu doğru trade-off mu?" → Modülerlik vs Performans
+- 🧙 **Sihirbaz Modu (Wizard Mode):** "Bunu hiç kimsenin yapmadığı şekilde nasıl yapabilirim?" → Özgün modül mimarisi
+- 🗺️ **Kaşif Modu (Explorer Mode):** "Burada ne var, ne keşfedebilirim?" → Yeni modül kombinasyonları
+- 🧩 **Modüler Mod (Modular Mode):** "Bu kodu nasıl bağımsız modüle dönüştürebilirim?"
+
+**Mod Geçişleri:**
+
+```typescript
+type DeveloperMode =
+  | 'builder' // İnşa etme zamanı
+  | 'researcher' // Anlama zamanı
+  | 'artist' // Güzelleştirme zamanı
+  | 'judge' // Karar verme zamanı
+  | 'wizard' // Yaratma zamanı
+  | 'explorer'; // Keşfetme zamanı
+
+const switchMode = (context: Context): DeveloperMode => {
+  if (context.needsBuilding) return 'builder';
+  if (context.needsUnderstanding) return 'researcher';
+  if (context.needsBeauty) return 'artist';
+  if (context.needsDecision) return 'judge';
+  if (context.needsInnovation) return 'wizard';
+  if (context.needsDiscovery) return 'explorer';
+  return 'builder'; // Default
+};
+```
+
+**Özgün Mutation Felsefesi:** Kod organizmalar gibi evrim geçirir. Değişim kaçınılmazdır. İyi kod, evrime açık koddur. Modüler kod, evrime daha hazırdır çünkü parçalar bağımsızdır.
+
+**Evrim Süreci (Modüler Yaklaşım):**
+
+```
+V1.0 (İlk Versiyon - Monolitik)
+  ↓ Refactor (Modülerleştirme)
+V1.1 (Modüller ayrıldı)
+  ↓ Interface Standardizasyonu
+V2.0 (Tam Modüler - Interface-driven)
+  ↓ Yeni Gereksinimler
+V2.1 (Yeni Modül Eklendi - Mevcut modüller etkilenmedi)
+  ↓ Plugin Sistemi
+V3.0 (Plugin-ready Modular Architecture)
+```
+
+**Full Modular Development Mantrası:**
+
+1. **Modül Önceliği (Module First)**
+
+   ```
+   Yeni feature geliyor
+     ↓
+   Bu bir modül mü yoksa özellik mi?
+     ├─> Modül → Ayrı dosya/klasör, interface tanımla
+     └─> Özellik → Mevcut modüle ekle veya yeni modül yarat
+   ```
+
+2. **Interface Contract First**
+
+   ```typescript
+   // Önce interface, sonra implementasyon
+   interface IFeature {
+     execute(input: Input): Output;
+     canHandle(input: Input): boolean;
+   }
+
+   // Sonra implementasyonlar gelir
+   class FeatureA implements IFeature {}
+   class FeatureB implements IFeature {}
+   ```
+
+3. **Test Edilebilir Modüller**
+
+   ```typescript
+   // Her modül kendi testlerini içerir
+   class UserModule {
+     // ... implementation
+   }
+
+   // Modül testi - bağımsız çalışır
+   describe('UserModule', () => {
+     it('should work independently', () => {
+       const module = new UserModule(mockDependencies);
+       // Test sadece bu modülü test eder
+     });
+   });
+   ```
+
+4. **Modül Dokümantasyonu**
+   ```typescript
+   /**
+    * @module UserModule
+    * @description Kullanıcı yönetimi modülü - tam bağımsız
+    * @dependencies IDataStore, ILogger
+    * @exports IUserService
+    * @lifecycle initialize → activate → (runtime) → deactivate → destroy
+    */
+   class UserModule implements IModule {
+     // ...
+   }
+   ```
+
+---
+
+## N - Network & Navigation
+
+**Yaklaşım: Teknoloji Ağı ve Keşif Haritası**
+
+Bilgi bir ağ gibi yayılır. Sen merkezde, etrafında halkalar var.
+
+**Özgün Teknoloji Ağı:**
+
+```
+            Merkez (Sen)
+               │
+        ┌──────┼──────┐
+        │      │      │
+    [Halka 1]  │  [Halka 1]
+   (Uzmanlık)  │ (Uzmanlık)
+        │      │      │
+        └──┬───┴───┬──┘
+           │       │
+        [Halka 2]  │
+    (Yakın Beceriler)
+           │
+        [Halka 3]
+    (Tamamlayıcı Beceriler)
+           │
+        [Halka 4+]
+    (Uzak Alanlar)
+```
+
+**Özgün Navigasyon Araçları:**
+
+- 🗺️ **Dokümantasyon = Harita:** Nereye gittiğini bil
+- 🧭 **Debugger = Pusula:** Hangi yöne gittiğini bul
+- 🍞 **Loglar = Ekmek Kırıntıları:** Geri dönüş yolunu işaretle
+- 🏔️ **Testler = Dönüm Noktaları:** Doğru yolda mısın?
+- 🌟 **Pattern'ler = Yıldızlar:** Yön bulmak için rehber
+
+**Özgün Keşif Stratejisi:**
+
+```typescript
+interface ExplorationStrategy {
+  center: 'Uzmanlık alanın';
+  expand: (direction: Direction) => Skill;
+  depth: 'Ne kadar derine in';
+  breadth: 'Ne kadar genişle';
+  connect: (skill1: Skill, skill2: Skill) => Connection;
+}
+
+// Keşif yönleri
+type Direction =
+  | 'adjacent' // 1 adım ötede
+  | 'complementary' // 2 adım ötede
+  | 'distant'; // 3+ adım ötede
+```
+
+---
+
+## O - Operation & Organization
+
+**Yaklaşım: Organizasyon Felsefesi ve Operasyonel Mükemmellik**
+
+Kod organizasyonu bir şehir planlaması gibidir. İyi planlanmış şehirler büyür, kötü planlanmışlar çöker.
+
+**Özgün Organizasyon Yaklaşımları:**
+
+1. **Özellik Bazlı (Feature-Based):** Şehir mahalleleri gibi
+
+   ```
+   features/
+     ├── authentication/
+     ├── payment/
+     └── dashboard/
+   ```
+
+2. **Katman Bazlı (Layer-Based):** Şehir katmanları gibi
+
+   ```
+   layers/
+     ├── presentation/
+     ├── business/
+     └── data/
+   ```
+
+3. **Domain Bazlı (Domain-Based):** Şehir bölgeleri gibi
+
+   ```
+   domains/
+     ├── ecommerce/
+     ├── logistics/
+     └── analytics/
+   ```
+
+4. **Özgün Hibrit Yaklaşım: Doku (Tissue) Organizasyonu**
+
+   ```
+   tissues/  // İlgili özellikler birlikte, ama bağımsız
+     ├── user-tissue/
+     │   ├── auth/
+     │   ├── profile/
+     │   └── preferences/
+     ├── product-tissue/
+     │   ├── catalog/
+     │   ├── search/
+     │   └── recommendations/
+   ```
+
+5. **Full Modular Organizasyon: Modül Merkezli Yapı**
+
+   ```
+   modules/  // Her modül tam bağımsız
+     ├── core/
+     │   ├── interfaces/       // Interface tanımları
+     │   │   ├── IModule.ts
+     │   │   ├── IDataStore.ts
+     │   │   └── ILogger.ts
+     │   ├── registry/          // Modül kayıt sistemi
+     │   │   └── ModuleRegistry.ts
+     │   └── lifecycle/         // Yaşam döngüsü yönetimi
+     │       └── ModuleLifecycle.ts
+     │
+     ├── features/              // Özellik modülleri
+     │   ├── user/
+     │   │   ├── UserModule.ts
+     │   │   ├── UserModule.test.ts
+     │   │   ├── UserModule.md
+     │   │   └── index.ts       // Export
+     │   ├── product/
+     │   └── payment/
+     │
+     ├── plugins/               // Plugin modülleri
+     │   ├── analytics/
+     │   └── notifications/
+     │
+     └── compositions/          // Modül kompozisyonları
+         ├── ecommerce.ts       // user + product + payment
+         └── dashboard.ts       // analytics + notifications
+   ```
+
+   **Modül Yapısı (Her Modül):**
+
+   ```
+   UserModule/
+     ├── interfaces/
+     │   └── IUserService.ts    // Modül interface'i
+     ├── implementation/
+     │   ├── UserModule.ts      // Ana implementasyon
+     │   └── UserService.ts
+     ├── tests/
+     │   ├── UserModule.test.ts
+     │   └── UserService.test.ts
+     ├── docs/
+     │   └── README.md           // Modül dokümantasyonu
+     ├── config/
+     │   └── module.config.ts    // Modül yapılandırması
+     └── index.ts                // Public exports
+   ```
+
+**Operasyonel Mükemmellik Prensipleri:**
+
+- 👁️ **Gözlemleme > İzleme:** Sadece metrik değil, anlam
+- 🤖 **Otomasyon > Manuel:** İnsan hatası yok, makine hatası var
+- 📝 **Kod olarak Altyapı:** Her şey kod, her şey version control'de
+- 🌪️ **Kaos Mühendisliği:** Sistemleri kır, güçlendir
+
+**Özgün Operasyon Yaklaşımı:**
+
+```typescript
+interface OperationalExcellence {
+  observability: {
+    logs: 'Ne oldu';
+    metrics: 'Ne kadar';
+    traces: 'Nerede';
+    insights: 'Neden';
+  };
+  automation: {
+    ci: 'Sürekli entegrasyon';
+    cd: 'Sürekli dağıtım';
+    testing: 'Otomatik test';
+    monitoring: 'Otomatik izleme';
+  };
+  resilience: {
+    chaos: 'Kaos testleri';
+    backup: 'Yedekleme';
+    rollback: 'Geri dönüş';
+    failover: 'Yedek sistem';
+  };
+}
+```
+
+---
+
+## P - Paradigm & Philosophy
+
+**Yaklaşım: Paradigma Spektrumu ve Pragmatik Felsefe**
+
+Paradigmalar araçlardır, dinler değil. Her araç farklı bir problem için uygundur.
+
+**Özgün Paradigma Görünümü:**
+
+```
+        Functional
+            │
+            │ (Fonksiyonel Düşünce)
+            │
+    ┌───────┼───────┐
+    │       │       │
+Declarative  │   OOP
+    │       │       │
+    │       │   (Nesne Düşünce)
+    │       │       │
+    └───┬───┴───┬───┘
+        │       │
+    Procedural  │
+        │       │
+    └───┴───┴───┘
+        │
+    Imperative
+```
+
+**Özgün Felsefe:** Dogmatik olma, pragmatik ol. Problem paradigm seçer, sen değil.
+
+**Paradigma Seçim Karar Ağacı:**
+
+```
+Problem geldi
+  ↓
+Fonksiyonel mi? (Matematiksel, dönüşümler)
+  ├─> Evet → Functional
+  └─> Hayır ↓
+
+Nesne odaklı mı? (Gerçek dünya varlıkları)
+  ├─> Evet → OOP
+  └─> Hayır ↓
+
+Adım adım mı? (Sıralı işlemler)
+  ├─> Evet → Procedural
+  └─> Hayır → Hybrid (Hibrit)
+```
+
+**Özgün Hibrit Yaklaşım:**
+
+```typescript
+// Fonksiyonel + OOP hibriti
+class DataProcessor {
+  // OOP: Durum yönetimi
+  private state: ProcessingState;
+
+  // Functional: Saf dönüşümler
+  process = (data: Data) => pipe(this.validate, this.transform, this.enrich, this.output)(data);
+
+  // Her iki dünyanın en iyisi
+}
+```
+
+---
+
+## Q - Quality & Quest
+
+**Yaklaşım: Kalite Boyutları ve Macera**
+
+Kalite çok boyutludur. Her proje bir maceradır.
+
+**Özgün Kalite Matrisi:**
+
+```
+┌─────────────────┬─────────────────┬─────────────────┐
+│   Correctness   │   Performance   │   Usability     │
+│   (Doğruluk)    │   (Performans)  │   (Kullanılabilirlik)│
+├─────────────────┼─────────────────┼─────────────────┤
+│   Maintainabilty│   Security      │   Accessibility │
+│   (Bakım)       │   (Güvenlik)    │   (Erişilebilirlik)│
+├─────────────────┼─────────────────┼─────────────────┤
+│   Testability   │   Scalability   │   Elegance      │
+│   (Test Edilebilirlik)│(Ölçeklenebilirlik)│(Zarafet)│
+└─────────────────┴─────────────────┴─────────────────┘
+```
+
+**Özgün Macera Metaforu:** Her proje bir macera, her bug bir bilmece, her feature bir keşif.
+
+**Macera Türleri:**
+
+```
+Quest Types:
+  - Epic Quest: Büyük projeler, uzun yolculuklar
+  - Side Quest: Küçük özellikler, hızlı kazanımlar
+  - Hidden Quest: Gizli özellikler, easter egg'ler
+  - Boss Fight: Zor bug'lar, kritik problemler
+  - Treasure Hunt: Optimizasyon, performans kazanımları
+```
+
+**Kalite Ölçümü:**
+
+```typescript
+interface QualityDimensions {
+  correctness: 'Kod doğru çalışıyor mu?';
+  performance: 'Yeterince hızlı mı?';
+  usability: 'Kullanıcı kullanabiliyor mu?';
+  maintainability: 'Gelecekte bakımı kolay mı?';
+  security: 'Güvenli mi?';
+  accessibility: 'Herkes erişebiliyor mu?';
+  testability: 'Test edilebilir mi?';
+  scalability: 'Büyüyebilir mi?';
+  elegance: 'Zarif mi?';
+}
+
+const measureQuality = (code: Code): QualityScore => {
+  return Object.values(QualityDimensions).reduce((score, dimension) => {
+    return score + evaluateDimension(code, dimension);
+  }, 0);
+};
+```
+
+---
+
+## R - Resilience & Rhythm
+
+**Yaklaşım: Dayanıklılık Desenleri ve Geliştirme Ritmi**
+
+Dayanıklılık, sistemin darbeleri nasıl absorbe ettiğiyle ilgilidir.
+
+**Özgün Dayanıklılık Desenleri:**
+
+1. **Yay Sistemi (Spring System):** Darbeleri esnek karşılar
+
+   ```typescript
+   interface SpringResilience {
+     compress: () => void; // Darbe geldiğinde sıkış
+     release: () => void; // Sonra yavaşça serbest bırak
+     reset: () => void; // Normale dön
+   }
+   ```
+
+2. **Yedekleme Mekanizması (Backup Mechanism):** Bir şey kırılırsa yedeği var
+
+   ```typescript
+   interface BackupResilience {
+     primary: System;
+     secondary: System;
+     switch: () => void; // Ana sistem kırılırsa geçiş yap
+   }
+   ```
+
+3. **Yavaş İyileşme (Gradual Recovery):** Hemen değil, yavaşça düzel
+
+   ```typescript
+   interface GradualRecovery {
+     current: number;
+     target: number;
+     recover: () => incrementSlowly(current, target);
+   }
+   ```
+
+4. **Güvenli Varsayılanlar (Safe Defaults):** Bilinmeyen durumda en güvenli seçenek
+   ```typescript
+   interface SafeDefaults {
+     unknown: 'failSafe'; // Bilinmeyen durumda güvenli mod
+     error: 'gracefulDegradation'; // Hata durumunda zarif düşüş
+   }
+   ```
+
+**Özgün Geliştirme Ritmi:**
+
+```typescript
+interface DevelopmentRhythm {
+  morning: {
+    time: '09:00-12:00';
+    activity: 'Deep coding';
+    energy: 'high';
+    focus: 'hard problems';
+  };
+  afternoon: {
+    time: '13:00-17:00';
+    activity: 'Collaboration';
+    energy: 'medium';
+    focus: 'reviews, pairing';
+  };
+  evening: {
+    time: '18:00-21:00';
+    activity: 'Learning';
+    energy: 'low';
+    focus: 'new tech, docs';
+  };
+}
+```
+
+---
+
+## S - State & Story
+
+**Yaklaşım: Durum Yönetimi ve Kod Hikayesi**
+
+State bir hikayenin zaman çizelgesi gibidir. Her değişiklik hikayede yeni bir sayfa.
+
+**Özgün State Evrimi:**
+
+```
+Başlangıç: Component State (Yerel hikaye)
+  ↓
+Genişleme: Global State (Geniş hikaye)
+  ↓
+Bağlantı: Server State (Ağ hikayesi)
+  ↓
+Gerçek Zaman: Real-time State (Canlı hikaye)
+```
+
+**Kod Hikayesi Yapısı:**
+
+```typescript
+interface CodeStory {
+  prologue: 'Requirement - İhtiyaç nereden geldi?';
+  chapter1: 'Design - Nasıl tasarlandı?';
+  chapter2: 'Implementation - Nasıl kodlandı?';
+  chapter3: 'Testing - Nasıl test edildi?';
+  chapter4: 'Deployment - Nasıl dağıtıldı?';
+  chapter5: 'Operation - Nasıl çalışıyor?';
+  chapter6: 'Evolution - Nasıl evrimleşti?';
+  epilogue: 'Refactoring - Nasıl iyileştirildi?';
+}
+```
+
+**Özgün State Yönetimi Yaklaşımı:**
+
+```typescript
+// State bir hikaye gibi yönetilir
+interface StoryState<T> {
+  past: T[]; // Geçmiş durumlar (undo için)
+  present: T; // Şimdiki durum
+  future: T[]; // Gelecek durumlar (redo için)
+
+  tellStory: () => 'Hikaye anlat';
+  rewind: () => 'Geri sar';
+  fastForward: () => 'İleri sar';
+}
+```
+
+---
+
+## T - Type & Trust
+
+**Yaklaşım: Tip Sistemi ve Güven Felsefesi**
+
+Tip sistemi bir güvenlik ağıdır. Ne kadar güçlü olursa, o kadar az hata.
+
+**Özgün Tip Sistemi Spektrumu:**
+
+```
+Untyped (Türsüz)
+    ↓ Daha fazla güvenlik
+Dynamic (Dinamik)
+    ↓
+Gradual (Kademeli)
+    ↓
+Static (Statik)
+    ↓
+Dependent (Bağımlı)
+```
+
+**Güven vs Doğrulama:**
+
+```typescript
+interface TrustPhilosophy {
+  trust: {
+    instincts: 'Sezgilerine güven';
+    experience: 'Deneyimine güven';
+    team: 'Takımına güven';
+  };
+  verify: {
+    tests: 'Testlerle doğrula';
+    metrics: 'Metriklerle doğrula';
+    logs: 'Loglarla doğrula';
+    reviews: "Review'larla doğrula";
+  };
+}
+
+// Özgün yaklaşım: Güven ama doğrula
+const developFeature = (feature: Feature) => {
+  // Güven: Sezgilerine göre yaz
+  const initialImplementation = trustInstincts(feature);
+
+  // Doğrula: Testlerle kontrol et
+  const verified = verifyWithTests(initialImplementation);
+
+  return verified;
+};
+```
+
+---
+
+## U - User & Utility
+
+**Yaklaşım: Kullanıcı Spektrumu ve Fayda Hesaplama**
+
+Kullanıcı hiyerarşisi vardır. Her seviye farklı ihtiyaçlar ister.
+
+**Özgün Kullanıcı Spektrumu:**
+
+```
+Son Kullanıcı (En Üst)
+    ↓ Basitlik ister
+Ürün Sahibi
+    ↓ Değer ister
+Takım Lideri
+    ↓ Verimlilik ister
+Geliştirici
+    ↓ Kontrol ister
+Sistem
+    ↓ Performans ister
+```
+
+**Özgün Fayda Fonksiyonu:**
+
+```typescript
+interface UtilityFunction {
+  value: number;      // Kullanıcıya sağladığı değer
+  complexity: number; // Uygulama karmaşıklığı
+  cost: number;       // Geliştirme maliyeti
+
+  utility: () => value / (complexity * cost);
+}
+
+// Her feature için sor
+const evaluateFeature = (feature: Feature): boolean => {
+  const utility = calculateUtility(feature);
+  return utility > threshold; // Eşik değerinin üstündeyse yap
+};
+```
+
+**Özgün Soru:** Bu gerçekten kullanışlı mı, yoksa sadece "cool" mu?
+
+---
+
+## V - Vision & Validation
+
+**Yaklaşım: Vizyon ve Doğrulama Hiyerarşisi**
+
+Vizyon uzak hedeftir, validation yakın kontrol.
+
+**Özgün Vizyon Yaklaşımı:**
+
+```typescript
+interface Vision {
+  timeframe: '6 months';
+  question: 'Bu proje 6 ay sonra ne olacak?';
+  image: 'Nasıl görünecek?';
+  feel: 'Nasıl hissettirecek?';
+  impact: 'Kime ne katkı sağlayacak?';
+}
+```
+
+**Özgün Validation Hiyerarşisi:**
+
+```
+Build başarısız?       → KRİTİK (Sistem çalışmıyor)
+  ↓
+Test başarısız?        → YÜKSEK (Özellik çalışmıyor)
+  ↓
+Review başarısız?      → ORTA (Kod kalitesi düşük)
+  ↓
+Beklenti karşılanmıyor? → DÜŞÜK (İyileştirme gerekli)
+```
+
+**Validation Stratejisi:**
+
+```typescript
+const validate = (code: Code): ValidationResult => {
+  if (!builds(code)) return CRITICAL;
+  if (!testsPass(code)) return HIGH;
+  if (!reviewPasses(code)) return MEDIUM;
+  if (!meetsExpectations(code)) return LOW;
+  return VALID;
+};
+```
+
+---
+
+## W - Workflow & Wisdom
+
+**Yaklaşım: Geliştirme Akışı ve Bilgelik Kaynakları**
+
+Workflow bir nehir gibidir. Akan su temiz kalır, durgun su bozulur.
+
+**Özgün Geliştirme Akışı:**
+
+```yaml
+development_river:
+  source: problem_space # Nehir kaynağı
+  flow:
+    - analyze: 'Problemi anla'
+    - design: 'Çözümü tasarla'
+    - implement: 'İlk çalışan versiyonu yap'
+    - refine: 'Yinelemeli iyileştir'
+    - validate: 'Gereksinimlere karşı doğrula'
+    - deliver: 'Kullanıcıya ulaştır'
+  destination: user_value # Nehir hedefi
+```
+
+**Özgün Bilgelik Kaynakları:**
+
+- 💥 **Kendi Hataların:** En değerli öğrenme
+- 📰 **Başkalarının Hataları:** Blog yazıları, case study'ler
+- 🎓 **Akademik:** Araştırma makaleleri
+- 🏢 **Endüstri:** Konferanslar, tecrübeler
+- 🧪 **Deneyimler:** Kendi denemelerin
+
+**Bilgelik Hiyerarşisi:**
+
+```
+En Değerli:
+  ↓
+Kendi Deneyimlerin (Yaşadığın)
+  ↓
+Başkalarının Deneyimleri (Öğrendiğin)
+  ↓
+Akademik Bilgi (Okuduğun)
+  ↓
+Endüstri Trendleri (Takip Ettiğin)
+```
+
+---
+
+## X - eXperiment & eXplore
+
+**Yaklaşım: Deney ve Keşif**
+
+Her geliştirme bir deneydir. Bazıları başarılı, bazıları başarısız.
+
+**Özgün Deney Şablonu:**
+
+```javascript
+const experiment = {
+  curiosity: 'Neden bu soruyu merak ediyorum?',
+  hypothesis: "Bu X'i iyileştirecek",
+  design: {
+    control: 'Mevcut durum',
+    variant: 'Yeni yaklaşım',
+    metric: 'Ne ölçeceğim',
+  },
+  execute: () => runExperiment(),
+  measure: (result) => extractMetrics(result),
+  learn: (metrics) => deriveInsights(metrics),
+  iterate: (insights) => adjustHypothesis(insights),
+};
+```
+
+**Özgün Keşif Bölgeleri:**
+
+- 🏠 **Konfor Bölgesi (Comfort Zone):** Bildiğin alan - koru
+- 🌱 **Öğrenme Bölgesi (Learning Zone):** Biraz bilmediğin - genişlet
+- 🌋 **Panik Bölgesi (Panic Zone):** Hiç bilmediğin - kaçın (şimdilik)
+
+**Keşif Stratejisi:**
+
+```
+Konfor Bölgesi
+    ↓ Küçük adımlarla
+Öğrenme Bölgesi
+    ↓ Yavaşça
+Daha Geniş Öğrenme Bölgesi
+    ↓
+Panik Bölgesi (Artık öğrenme bölgesi oldu)
+```
+
+---
+
+## Y - Yield & Yes!
+
+**Yaklaşım: Teslim Olma ve Evet Zihniyeti**
+
+Kullanıcılara teslim ol. Onlar için yapıyorsun.
+
+**Evet Zihniyeti:**
+
+```typescript
+interface YesMentality {
+  challenges: 'Evet, zorlukları kabul et';
+  learning: 'Evet, öğrenmeye açık ol';
+  feedback: 'Evet, geri bildirim al';
+  failure: 'Evet, başarısızlıktan öğren';
+}
+```
+
+**Yield Felsefesi:**
+
+```javascript
+// Yield = Kontrolü bırak, akışa uy
+async function* process() {
+  yield await step1(); // İlk adım, kontrolü bırak
+  yield await step2(); // İkinci adım, kontrolü bırak
+  yield await step3(); // Üçüncü adım, kontrolü bırak
+}
+
+// Her şeyin bir anda bitmesi gerekmez
+// Yavaş yavaş, adım adım
+```
+
+---
+
+## Z - Zero & Zenith
+
+**Yaklaşım: Sıfır Bilgi Prensibi ve Zirve Anları**
+
+Minimum bilgi, maksimum güvenlik. Sistemler sadece ihtiyaç duydukları bilgiyi bilmeli.
+
+**Özgün Sıfır Bilgi Prensibi:**
+
+```
+Sistem sadece şunu bilmeli:
+  - Ne yapması gerektiğini
+  - Nasıl yapması gerektiğini
+  - Ne zaman yapması gerektiğini
+
+Sistem şunu BİLMEMELİ:
+  - Neden yapması gerektiğini (üst seviye bilgi)
+  - Başka sistemlerin sırlarını
+  - Gelecekte ne olacağını
+```
+
+**Zirve Anları (Zenith Moments):**
+
+```typescript
+interface ZenithMoments {
+  cleanDeploy: 'Temiz deploy, hiç sorun yok';
+  perfectAbstraction: 'Mükemmel soyutlama bulundu';
+  performanceWin: 'Performans kazancı elde edildi';
+  elegantSolution: 'Zarif çözüm bulundu';
+  greatCollaboration: 'Harika iş birliği';
+  bugSolved: 'Zor bug çözüldü';
+  codeDeleted: 'Gereksiz kod silindi (en güzel çözüm)';
+}
+```
+
+**Sıfırdan Zirveye:**
+
+```
+0 bilgi (Başlangıç)
+  ↓ Araştır
+Araştırma (Anlama)
+  ↓ Prototip
+Prototip (Dene)
+  ↓ Yinele
+Yineleme (İyileştir)
+  ↓ Ustalaş
+Ustalık (Zirve)
+```
+
+---
+
+## 🎯 Developer DNA
+
+### Code Skeleton (Özgün Versiyon - Full Modular)
+
+```python
+def write_code(requirement):
+    # Bağlamı topla - hikayeyi anla
+    context = understand_story(requirement)
+
+    # Modüler tasarım - her bölüm bir modül
+    modular_design = design_as_modules(context)
+
+    # Modül registry oluştur
+    registry = ModuleRegistry()
+
+    # Yinelemeli modül uygulama
+    while not modular_design.complete():
+        # Sonraki modülü al
+        module_spec = modular_design.next_module()
+
+        # Interface'i tanımla (contract first)
+        interface = define_interface(module_spec)
+
+        # Modülü implemente et
+        module = implement_module(interface, module_spec)
+
+        # Modül testlerini yaz ve çalıştır
+        module_tests = write_module_tests(module)
+        validate_module(module, module_tests)
+
+        # Modülü kayıt defterine ekle
+        registry.register(module_spec.name, module)
+
+        # Modül dokümantasyonunu oluştur
+        document_module(module)
+
+    # Modülleri birleştir (compose)
+    composed_system = compose_modules(registry)
+
+    # Sistem testleri
+    validate_composition(composed_system)
+
+    # Teslim et - modüler hikayeyi yayınla
+    return publish_modular_story(composed_system, registry)
+```
+
+### Full Modular Development Workflow
+
+```typescript
+// 1. Interface Tanımlama (Contract First)
+interface IModule {
+  name: string;
+  version: string;
+  initialize(): Promise<void>;
+  activate(): Promise<void>;
+  deactivate(): Promise<void>;
+  destroy(): Promise<void>;
+}
+
+// 2. Modül Implementasyonu
+class MyModule implements IModule {
+  constructor(private dependencies: DependencyMap, private config: ModuleConfig) {}
+
+  async initialize() {
+    /* ... */
+  }
+  async activate() {
+    /* ... */
+  }
+  async deactivate() {
+    /* ... */
+  }
+  async destroy() {
+    /* ... */
+  }
+}
+
+// 3. Modül Kaydı
+const registry = new ModuleRegistry();
+registry.register('myModule', {
+  factory: () => new MyModule(registry.resolveDependencies(), config),
+  dependencies: ['logger', 'dataStore'],
+  exports: ['IMyService'],
+});
+
+// 4. Modül Kullanımı
+const system = new ModularSystem(registry);
+await system.initialize();
+const myService = system.resolve<IMyService>('myModule');
+```
+
+### Modular Code Checklist
+
+```
+Yeni kod yazılırken:
+  ✅ Bu kod bağımsız bir modül mü?
+  ✅ Interface tanımladım mı?
+  ✅ Dependency injection kullandım mı?
+  ✅ Testleri modülle birlikte yazdım mı?
+  ✅ Dokümantasyonu modülle birlikte yazdım mı?
+  ✅ Modülü registry'ye kaydettim mi?
+  ✅ Lifecycle metodları var mı?
+```
+
+### Mental Models (Özgün Versiyon - Full Modular)
+
+```
+System = ThoughtCapsules + MagneticFields + Boundaries + ModularRegistry
+Code = Narrative + Logic + Data + Flow + Modules
+Software = Solving problem + Managing complexity + Telling story + Composing modules
+Module = Interface + Implementation + Tests + Documentation + Lifecycle
+Architecture = Independent Modules + Interface Contracts + Dependency Injection + Composition
+```
+
+### Compass Directions (Özgün Versiyon)
+
+```
+North: User value (Kullanıcı değeri)
+South: Technical debt (Teknik borç)
+East: Innovation (İnovasyon)
+West: Stability (Stabilite)
+Center: You (Sen - kararları veren)
+```
+
+---
+
+## 🔍 SEO & Search Engine Visibility
+
+**Yaklaşım: Görünürlük ve Keşfedilebilirlik Evreni (Visibility & Discoverability Universe)**
+
+Web sitesi, karanlık uzayda parlayan bir yıldız gibi olmalı. Arama motorları teleskoplarıyla seni bulmalı, yapay zeka sistemleri seni anlamalı. Her HTML tag'i bir sinyal, her meta tag bir işaret fişeği.
+
+```typescript
+// Görünürlük evreni metaforu
+interface VisibilityUniverse {
+  signals: Signal[]; // Arama motorlarına gönderilen sinyaller
+  beacons: Beacon[]; // AI sistemlerine gönderilen işaretler
+  pathways: Pathway[]; // Kullanıcıların gelebileceği yollar
+  resonance: Resonance; // İçerik ile arama uyumu
+}
+
+// Signal türleri
+type Signal =
+  | 'semantic-html' // Semantic HTML işaretleri
+  | 'structured-data' // Schema.org yapılandırılmış veri
+  | 'meta-signals' // Meta tag sinyalleri
+  | 'content-signals' // İçerik kalitesi sinyalleri
+  | 'technical-signals' // Teknik sinyaller (hız, mobil uyumluluk)
+  | 'multilang-signals'; // Multi-dil sinyalleri (hreflang, lang attribute)
+```
+
+**Özgün SEO Felsefesi:** SEO, karanlıkta ışık yakmak değil, parlak bir yıldız olmak. Arama motorları ve AI sistemleri seni bulsun çünkü sen gerçekten değerlisin.
+
+**SEO Evren Haritası:**
+
+```
+        Görünürlük Evreni (Visibility Universe)
+                    │
+        ┌───────────┼───────────┐
+        │           │           │
+    [Sinyaller] [İşaretler] [Yollar]
+  (Technical)  (Content) (Links)
+        │           │           │
+        └───────┬───┴───┬───────┘
+                │       │
+            [Rezonans] [Keşif]
+          (Matching) (Discovery)
+```
+
+**Özgün SEO Karar Süreci:**
+
+```
+İçerik oluşturuluyor
+  ↓
+Kim için? (Hedef kitle)
+  ├─> Arama motorları → SEO optimizasyonu
+  ├─> AI sistemleri → Semantic markup, structured data
+  ├─> Kullanıcılar → UX, erişilebilirlik
+  └─> Hepsi → Hibrit yaklaşım
+```
+
+**SEO Prensipleri:**
+
+1. **Semantic HTML5 = DNA**
+
+   ```html
+   <!-- ❌ Kötü: Anlamsız yapı -->
+   <div class="header">
+     <div class="title">Başlık</div>
+   </div>
+
+   <!-- ✅ İyi: Semantic yapı -->
+   <header role="banner">
+     <h1>Başlık</h1>
+   </header>
+   ```
+
+2. **Structured Data = İşaret Fişekleri**
+
+   ```json
+   {
+     "@context": "https://schema.org",
+     "@type": "Article",
+     "headline": "Başlık",
+     "author": {
+       "@type": "Person",
+       "name": "Yazar"
+     },
+     "datePublished": "2024-01-15"
+   }
+   ```
+
+3. **Meta Tags = İlk İzlenim**
+
+   ```html
+   <!-- Arama motorları için -->
+   <meta name="description" content="Kısa, özgün, 160 karakter" />
+   <meta name="keywords" content="anahtar, kelime" />
+
+   <!-- AI sistemleri için -->
+   <meta name="ai:description" content="AI için açıklama" />
+   <meta name="ai:category" content="Kategori" />
+   ```
+
+4. **Content Quality = Çekirdek Değer**
+   - Minimum 300 kelime (derin içerik)
+   - Anahtar kelime doğal kullanımı
+   - İç linkleme stratejisi
+   - Görsel alt text'leri (keyword-rich ama descriptive)
+
+**SEO Modül Yapısı (Full Modular):**
+
+```typescript
+// js/modules/seo/SEOModule.js
+interface ISEOModule {
+  setupMetaTags(): void;
+  injectStructuredData(): void;
+  updateCanonical(url: string): void;
+  generateSitemap(): void;
+  optimizeImages(): void;
+}
+
+class SEOModule implements ISEOModule {
+  constructor(
+    private metaManager: IMetaManager,
+    private schemaGenerator: ISchemaGenerator,
+    private sitemapGenerator: ISitemapGenerator
+  ) {}
+
+  setupMetaTags() {
+    // Dynamic meta tag management
+    this.metaManager.setTitle(pageTitle);
+    this.metaManager.setDescription(pageDescription);
+    this.metaManager.setOGTags(ogData);
+  }
+
+  injectStructuredData() {
+    // Schema.org JSON-LD injection
+    const schema = this.schemaGenerator.generate(pageData);
+    this.injectJSONLD(schema);
+  }
+}
+```
+
+---
+
+## 📈 Traffic & User Acquisition
+
+**Yaklaşım: Yol Ağı ve Ziyaretçi Akışı (Path Network & Visitor Flow)**
+
+Traffic, bir şehre gelen ziyaretçiler gibidir. Farklı yollardan gelirler - bazıları organik aramadan, bazıları sosyal medyadan, bazıları doğrudan. Her yol bir kapı, her kapı bir fırsat.
+
+```typescript
+// Trafik akışı metaforu
+interface TrafficFlow {
+  sources: TrafficSource[]; // Trafik kaynakları
+  gates: Gateway[]; // Giriş kapıları
+  pathways: UserPath[]; // Kullanıcı yolları
+  conversions: Conversion[]; // Dönüşüm noktaları
+}
+
+type TrafficSource =
+  | 'organic-search' // Organik arama
+  | 'social-media' // Sosyal medya
+  | 'direct' // Doğrudan
+  | 'referral' // Referans
+  | 'email' // E-posta
+  | 'paid-ads'; // Reklamlar
+```
+
+**Özgün Traffic Felsefesi:** Trafik çekmek, insanları zorla getirmek değil, değerli bir yer olduğunu göstermek. İnsanlar seni bulsun çünkü gerçekten ihtiyaçları var.
+
+**Traffic Ekosistemi:**
+
+```
+        Trafik Ekosistemi
+             │
+    ┌────────┼────────┐
+    │        │        │
+[Organik] [Sosyal] [Doğrudan]
+  Arama   Medya    Erişim
+    │        │        │
+    └───┬────┴────┬───┘
+        │        │
+    [Referans] [E-posta]
+    Başka      Marketing
+    Siteler
+```
+
+**Traffic Çekme Stratejileri:**
+
+1. **Social Sharing = Viral Dalgalar**
+
+   ```javascript
+   // js/modules/engagement/SocialShareModule.js
+   class SocialShareModule {
+     shareToFacebook(url, title, description) {
+       const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+       window.open(shareUrl, '_blank');
+       this.trackShare('facebook');
+     }
+
+     shareToWhatsApp(url, text) {
+       const shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+       window.open(shareUrl);
+       this.trackShare('whatsapp');
+     }
+   }
+   ```
+
+2. **Newsletter = Sadık Ziyaretçi Toplama**
+
+   ```javascript
+   // js/modules/engagement/NewsletterModule.js
+   class NewsletterModule {
+     showExitIntent() {
+       // Kullanıcı sayfadan çıkmak üzereyken
+       document.addEventListener('mouseleave', (e) => {
+         if (e.clientY < 0) {
+           this.showNewsletterPopup();
+         }
+       });
+     }
+
+     showNewsletterPopup() {
+       // Özel teklif göster
+       // E-posta topla
+     }
+   }
+   ```
+
+3. **Push Notifications = Anında Haber**
+
+   ```javascript
+   // js/modules/engagement/PushNotificationModule.js
+   class PushNotificationModule {
+     async requestPermission() {
+       if ('Notification' in window) {
+         const permission = await Notification.requestPermission();
+         if (permission === 'granted') {
+           this.subscribeUser();
+         }
+       }
+     }
+
+     sendNotification(title, body, url) {
+       new Notification(title, {
+         body: body,
+         icon: '/icon.png',
+         data: { url: url },
+       });
+     }
+   }
+   ```
+
+4. **Internal Linking = İç Yol Ağı**
+
+   ```html
+   <!-- Related Content - Link Juice Distribution -->
+   <section class="related-content">
+     <h2>İlgili İçerikler</h2>
+     <article>
+       <h3><a href="/ilgili-makale" rel="related">İlgili Makale</a></h3>
+       <p>Kısa açıklama...</p>
+     </article>
+   </section>
+   ```
+
+5. **Content Gating = Lead Generation**
+   ```javascript
+   // js/modules/engagement/ContentGateModule.js
+   class ContentGateModule {
+     showPremiumContentGate() {
+       // Premium içerik için e-posta iste
+       // İçeriği unlock et
+     }
+   }
+   ```
+
+**Traffic Modül Yapısı:**
+
+```typescript
+// js/modules/traffic/TrafficModule.js
+interface ITrafficModule {
+  trackTrafficSource(): void;
+  optimizeConversionPaths(): void;
+  setupSocialSharing(): void;
+  manageNewsletter(): void;
+  handlePushNotifications(): void;
+}
+```
+
+---
+
+## 🤖 AI & Machine Understanding
+
+**Yaklaşım: Yapay Zeka Anlayışı ve Makine Okunabilirliği (AI Understanding & Machine Readability)**
+
+Yapay zeka sistemleri (ChatGPT, Gemini, Claude vb.), siteni bir insan gibi okumaz - onlar makine gözüyle bakarlar. Semantic markup, structured data ve net yapı onların "gözleri"dir.
+
+```typescript
+// AI anlayışı metaforu
+interface AIUnderstanding {
+  semanticMarkup: SemanticStructure; // Semantic HTML yapısı
+  structuredData: StructuredData; // Schema.org verileri
+  contentClarity: ContentClarity; // İçerik netliği
+  contextSignals: ContextSignal[]; // Bağlam sinyalleri
+}
+
+type AISignal =
+  | 'semantic-tags' // <article>, <section>, <nav> gibi
+  | 'aria-labels' // Accessibility + AI için
+  | 'microdata' // Mikro veriler
+  | 'json-ld' // JSON-LD structured data
+  | 'meta-ai-tags'; // AI özel meta tag'leri
+```
+
+**Özgün AI Felsefesi:** AI sistemleri, siteni bir kitap gibi okur. Net bölümler, anlamlı başlıklar, iyi organize edilmiş içerik onların "okumasını" kolaylaştırır.
+
+**AI-Optimized Content Structure:**
+
+```html
+<!-- AI-Friendly Content -->
+<article itemscope itemtype="https://schema.org/Article">
+  <header>
+    <h1 itemprop="headline">Ana Başlık</h1>
+    <div itemprop="author" itemscope itemtype="https://schema.org/Person">
+      <span itemprop="name">Yazar Adı</span>
+    </div>
+    <time itemprop="datePublished" datetime="2024-01-15">15 Ocak 2024</time>
+  </header>
+
+  <div itemprop="articleBody">
+    <section aria-labelledby="bolum1">
+      <h2 id="bolum1">Bölüm Başlığı</h2>
+      <p>İçerik paragrafları...</p>
+    </section>
+  </div>
+
+  <!-- AI özel meta tag'leri -->
+  <meta name="ai:description" content="AI için özel açıklama" />
+  <meta name="ai:category" content="Technology" />
+  <meta name="ai:keywords" content="keyword1, keyword2" />
+</article>
+```
+
+**AI Modül Yapısı:**
+
+```typescript
+// js/modules/ai/AIOptimizationModule.js
+interface IAIOptimizationModule {
+  injectAIMetaTags(): void;
+  enhanceSemanticMarkup(): void;
+  generateAIReadableContent(): void;
+}
+
+class AIOptimizationModule implements IAIOptimizationModule {
+  injectAIMetaTags() {
+    // AI sistemleri için özel meta tag'ler
+    this.addMetaTag('ai:description', aiDescription);
+    this.addMetaTag('ai:category', category);
+  }
+
+  enhanceSemanticMarkup() {
+    // Semantic HTML'i güçlendir
+    // ARIA labels ekle
+    // Microdata ekle
+  }
+}
+```
+
+---
+
+## 🎯 Technical SEO Foundation
+
+**Özgün Teknik SEO Karar Ağacı:**
+
+```
+Teknik SEO gerekli
+  ↓
+Site yapısı nasıl?
+  ├─> Hiyerarşik → Breadcrumb schema ekle
+  ├─> Düz yapı → Hiyerarşik yapıya geç
+  └─> Karma → Sitemap ile organize et
+
+Multi-dil var mı?
+  ├─> Evet → Hreflang tag'leri ekle, canonical yapısını kontrol et
+  ├─> Hayır → Normal SEO akışı
+  └─> Planlanıyor → Multi-dil modülünü Full Modular yapıda hazırla
+
+Performans nasıl?
+  ├─> Yavaş → Lazy loading, code splitting
+  ├─> Orta → CDN, caching
+  └─> Hızlı → Core Web Vitals optimize et
+
+Mobil uyumlu mu?
+  ├─> Evet → Mobile-first test et
+  ├─> Hayır → Responsive yap
+  └─> Kısmen → Tam responsive yap
+```
+
+**Technical SEO Checklist (Modüler Yaklaşım):**
+
+```typescript
+interface TechnicalSEOChecklist {
+  // Core Technical
+  robotsTxt: boolean; // robots.txt var mı?
+  sitemapXml: boolean; // sitemap.xml var mı?
+  canonicalUrls: boolean; // Canonical URL'ler var mı?
+  httpsEnabled: boolean; // SSL sertifikası var mı?
+
+  // Performance
+  pageSpeed: 'optimal' | 'good' | 'needs-improvement';
+  coreWebVitals: {
+    lcp: number; // < 2.5s
+    fid: number; // < 100ms
+    cls: number; // < 0.1
+  };
+
+  // Mobile
+  mobileFriendly: boolean;
+  responsiveDesign: boolean;
+  viewportMeta: boolean;
+
+  // Structured Data
+  schemaMarkup: boolean;
+  jsonLd: boolean;
+  microdata: boolean;
+
+  // Multi-Language (i18n) - Duplicate Content Prevention
+  hreflangTags: boolean; // Hreflang tag'leri her sayfada var mı?
+  htmlLangAttribute: boolean; // HTML lang attribute doğru mu?
+  canonicalPerLanguage: boolean; // Her dil versiyonu için ayrı canonical var mı?
+  urlStructure: 'hierarchical' | 'flat' | 'query-param'; // URL yapısı (hierarchical önerilir)
+  sitemapMultiLang: boolean; // Sitemap'te dil etiketleri var mı?
+  xDefaultLanguage: boolean; // x-default hreflang var mı?
+
+  // Security
+  securityHeaders: boolean;
+  hstsEnabled: boolean;
+}
+```
+
+**Technical SEO Modules:**
+
+```typescript
+// js/modules/seo/technical/RobotsModule.js
+class RobotsModule {
+  generateRobotsTxt() {
+    return `
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+Sitemap: https://site.com/sitemap.xml
+    `;
+  }
+}
+
+// js/modules/seo/technical/SitemapModule.js
+class SitemapModule {
+  generateSitemap(pages: Page[]) {
+    return pages.map((page) => ({
+      loc: page.url,
+      lastmod: page.lastModified,
+      changefreq: page.changeFrequency,
+      priority: page.priority,
+    }));
+  }
+}
+```
+
+---
+
+## 🌐 Multi-Language (i18n) Architecture & SEO Strategy
+
+**Yaklaşım: Dil Evrenleri ve Çeviri Kapsülleri (Language Universes & Translation Capsules)**
+
+Multi-dil özelliği, her dil için ayrı bir evren yaratır. Her evren kendi çeviri kapsülünü taşır, ama tüm evrenler aynı merkezi mantıkla yönetilir. Google'a gönderilen sinyaller, bu evrenlerin birbirleriyle ilişkisini net bir şekilde açıklar.
+
+```typescript
+// Dil evreni metaforu
+interface LanguageUniverse {
+  language: string; // Dil kodu (tr, en, de)
+  translations: TranslationCapsule; // Çeviri kapsülü
+  url: string; // Bu dil için URL
+  metadata: LanguageMetadata; // Dil meta verileri
+  seo: LanguageSEO; // Dil bazlı SEO yapılandırması
+}
+
+// Çeviri kapsülü - Full Modular yapı
+interface TranslationCapsule {
+  core: TranslationStore; // Çekirdek çeviri deposu
+  portals: TranslationPortals; // Dışa açılan portallar
+  shields: ValidationShields; // Doğrulama kalkanları
+  lifecycle: TranslationLifecycle; // Yaşam döngüsü
+}
+
+// Dil SEO yapılandırması
+interface LanguageSEO {
+  hreflang: string[]; // Bu sayfanın diğer dil versiyonları
+  canonical: string; // Bu dil versiyonunun canonical URL'i
+  alternate: AlternateLanguage[]; // Alternatif dil linkleri
+  htmlLang: string; // HTML lang attribute değeri
+  dir: 'ltr' | 'rtl'; // Metin yönü
+  ogLocale: string; // Open Graph locale
+}
+```
+
+**Özgün Multi-Dil Felsefesi:** Her dil bir evren, her çeviri bir kapsül. Google, bu evrenlerin birbirleriyle nasıl ilişkili olduğunu anlamalı. Duplicate content değil, alternatif içerik olduğunu bilmeli.
+
+**Multi-Dil SEO Evren Haritası:**
+
+```
+        Merkez (Ana Sistem)
+              │
+    ┌─────────┼─────────┐
+    │         │         │
+[TR Evren] [EN Evren] [DE Evren]
+    │         │         │
+    │         │         │
+Hreflang → Hreflang → Hreflang
+(Tüm evrenleri birbirine bağlar)
+```
+
+**Özgün Multi-Dil Karar Süreci:**
+
+**⚠️ ÖNEMLİ: SABİT DİL YAPISI KURALI**
+
+**Bu projede dil sayısı ne olursa olsun, her zaman aynı URL yapısı kullanılır:**
+
+```
+✅ SABİT URL YAPISI (Her zaman):
+example.com/{lang}/{category}/{page}
+example.com/en/.../...
+example.com/tr/.../...
+example.com/de/.../...
+```
+
+**Karar Süreci:**
+
+```
+Multi-dil özelliği gerekiyor
+  ↓
+URL yapısı nasıl olacak?
+  ├─> Subdirectory: /{lang}/.../... → ✅ SABİT KURAL (Her zaman bu yapı)
+  └─> Dil sayısı önemli değil, her zaman subdirectory yapısı kullanılır
+
+Her dil için ayrı içerik mi yoksa çeviri mi?
+  ├─> Ayrı içerik → Hreflang yeterli, canonical gerekli
+  ├─> Çeviri → Hreflang + x-default mutlaka
+  └─> Hibrit → Her sayfa için duruma göre karar ver
+```
+
+**Not:** Dil sayısına göre sadece sitemap bölümleme değişir, URL yapısı değişmez.
+
+```
+2-3 dil → Tek sitemap yeterli
+4-10 dil → Sitemap bölümleme (dil bazlı)
+10+ dil → Sitemap bölümleme + index sitemap
+```
+
+**Multi-Dil Modül Yapısı (Full Modular):**
+
+```typescript
+// modules/i18n/interfaces/II18nModule.js
+interface II18nModule {
+  // Dil yönetimi
+  getCurrentLanguage(): string;
+  setLanguage(lang: string): Promise<void>;
+  getAvailableLanguages(): string[];
+
+  // Çeviri işlemleri
+  t(key: string, params?: Record<string, any>): string;
+  translate(key: string, params?: Record<string, any>): string;
+
+  // SEO entegrasyonu
+  injectHreflangTags(): void;
+  updateCanonical(): void;
+  updateHTMLAttributes(): void;
+  updateMetaTags(): void;
+
+  // Yaşam döngüsü
+  initialize(): Promise<void>;
+  activate(): Promise<void>;
+  deactivate(): Promise<void>;
+
+  // Event'ler
+  onLanguageChange(callback: (lang: string) => void): void;
+}
+
+// modules/i18n/seo/HreflangModule.js
+interface IHreflangModule {
+  injectHreflangTags(): void;
+  buildAlternateUrl(currentPath: string, targetLang: string): string;
+  getSelfReferencing(): string;
+  getXDefaultUrl(): string;
+}
+
+// modules/i18n/seo/CanonicalModule.js
+interface ICanonicalModule {
+  updateCanonical(): void;
+  getCleanUrl(): string;
+  buildLanguageCanonical(lang: string, path: string): string;
+}
+
+// modules/i18n/seo/SEOIntegrationModule.js
+interface ISEOIntegrationModule {
+  initialize(): Promise<void>;
+  updateAllSEOTags(): void;
+  onLanguageChange(newLang: string): void;
+}
+```
+
+**Hreflang Tag Yapısı (Google'ın Görmesi Gereken):**
+
+```html
+<!-- Her sayfanın <head> bölümünde OLMASI GEREKEN -->
+<!-- Kendi diline referans (self-referencing) -->
+<link rel="alternate" hreflang="tr" href="https://site.com/tr/hakkimizda" />
+
+<!-- Diğer dil versiyonları -->
+<link rel="alternate" hreflang="en" href="https://site.com/en/about" />
+<link rel="alternate" hreflang="de" href="https://site.com/de/uber-uns" />
+
+<!-- Varsayılan dil (x-default) - Genellikle ana sayfa -->
+<link rel="alternate" hreflang="x-default" href="https://site.com/" />
+```
+
+**Canonical URL Stratejisi (Duplicate Content Önleme):**
+
+```html
+<!-- Türkçe sayfa için -->
+<link rel="canonical" href="https://site.com/tr/hakkimizda" />
+
+<!-- İngilizce sayfa için -->
+<link rel="canonical" href="https://site.com/en/about" />
+
+<!-- ❌ YANLIŞ: Tüm diller için aynı canonical -->
+<link rel="canonical" href="https://site.com/hakkimizda" />
+```
+
+**URL Yapısı Stratejisi:**
+
+```
+✅ İYİ (Hiyerarşik Subdirectory):
+https://site.com/tr/hakkimizda
+https://site.com/en/about
+https://site.com/de/uber-uns
+
+⚠️ ORTA (Subdomain):
+https://tr.site.com/hakkimizda
+https://en.site.com/about
+(Not: Her subdomain için ayrı sitemap gerekir)
+
+❌ KÖTÜ (Query Parameter):
+https://site.com/hakkimizda?lang=tr
+https://site.com/hakkimizda?lang=en
+(Not: Google query param'lı URL'leri farklı sayfa olarak görmeyebilir)
+```
+
+**HTML Lang Attribute (Browser + AI + SEO için):**
+
+```html
+<!-- Türkçe sayfa -->
+<html lang="tr" dir="ltr">
+  <!-- İngilizce sayfa -->
+  <html lang="en" dir="ltr">
+    <!-- Arapça sayfa (RTL) -->
+    <html lang="ar" dir="rtl"></html>
+  </html>
+</html>
+```
+
+**Sitemap.xml Multi-Language Yapısı:**
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Türkçe sayfa -->
+  <url>
+    <loc>https://site.com/tr/hakkimizda</loc>
+    <!-- Her dil versiyonu için hreflang -->
+    <xhtml:link rel="alternate" hreflang="tr" href="https://site.com/tr/hakkimizda" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://site.com/en/about" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://site.com/de/uber-uns" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://site.com/" />
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- İngilizce sayfa -->
+  <url>
+    <loc>https://site.com/en/about</loc>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://site.com/tr/hakkimizda" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://site.com/en/about" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://site.com/de/uber-uns" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://site.com/" />
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>
+```
+
+**Multi-Dil SEO Modül Implementasyonu:**
+
+```javascript
+// modules/i18n/seo/HreflangModule.js
+export class HreflangModule {
+  constructor(i18nModule) {
+    this.i18n = i18nModule;
+  }
+
+  injectHreflangTags() {
+    const currentPath = window.location.pathname;
+    const currentLang = this.i18n.getCurrentLanguage();
+    const availableLangs = this.i18n.getAvailableLanguages();
+
+    // Mevcut hreflang tag'lerini temizle
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((link) => {
+      link.remove();
+    });
+
+    // Self-referencing (kendi diline referans - ZORUNLU)
+    const selfLink = document.createElement('link');
+    selfLink.rel = 'alternate';
+    selfLink.hreflang = currentLang;
+    selfLink.href = window.location.href;
+    document.head.appendChild(selfLink);
+
+    // Her dil için hreflang tag'i oluştur
+    availableLangs.forEach((lang) => {
+      if (lang === currentLang) return; // Kendisi zaten eklendi
+
+      const link = document.createElement('link');
+      link.rel = 'alternate';
+      link.hreflang = lang;
+      link.href = this.buildAlternateUrl(currentPath, lang);
+      document.head.appendChild(link);
+    });
+
+    // x-default (varsayılan dil - Genellikle ana sayfa)
+    const defaultLink = document.createElement('link');
+    defaultLink.rel = 'alternate';
+    defaultLink.hreflang = 'x-default';
+    defaultLink.href = this.buildDefaultUrl();
+    document.head.appendChild(defaultLink);
+  }
+
+  buildAlternateUrl(currentPath, targetLang) {
+    const baseUrl = window.location.origin;
+    const langPrefix = `/${targetLang}`;
+
+    // Path'den mevcut dil prefix'ini kaldır
+    const pathWithoutLang = currentPath.replace(/^\/[a-z]{2}(\/|$)/, '/');
+
+    // Yeni dil prefix'i ekle
+    const newPath =
+      pathWithoutLang === '/' || pathWithoutLang === ''
+        ? langPrefix
+        : `${langPrefix}${pathWithoutLang}`;
+
+    return `${baseUrl}${newPath}`;
+  }
+
+  buildDefaultUrl() {
+    // Varsayılan dil için ana sayfa veya varsayılan dilin ana sayfası
+    return `${window.location.origin}/`; // Veya /tr/ gibi
+  }
+}
+
+// modules/i18n/seo/CanonicalModule.js
+export class CanonicalModule {
+  constructor(i18nModule) {
+    this.i18n = i18nModule;
+  }
+
+  updateCanonical() {
+    let canonical = document.querySelector('link[rel="canonical"]');
+
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+
+    // Mevcut URL'i canonical olarak ayarla (dil prefix'i ile)
+    const currentLang = this.i18n.getCurrentLanguage();
+    const cleanUrl = this.getCleanUrl();
+
+    // Eğer URL'de dil prefix'i yoksa ekle
+    let canonicalUrl = window.location.origin;
+    if (cleanUrl && cleanUrl !== '/') {
+      canonicalUrl += `/${currentLang}${cleanUrl}`;
+    } else {
+      canonicalUrl += `/${currentLang}/`;
+    }
+
+    canonical.href = canonicalUrl;
+  }
+
+  getCleanUrl() {
+    let path = window.location.pathname;
+    // Mevcut dil prefix'ini kaldır
+    path = path.replace(/^\/[a-z]{2}(\/|$)/, '/');
+    if (path === '/') path = '';
+    return path || '';
+  }
+}
+```
+
+**Multi-Dil SEO Faydaları:**
+
+1. **Genişletilmiş Erişim:**
+
+   - Her dil için ayrı anahtar kelime seti
+   - Her dil için ayrı SERP pozisyonu
+   - Yerel aramalarda daha iyi performans
+
+2. **Coğrafi Hedefleme:**
+
+   - Google Search Console'da dil bazlı izleme
+   - Coğrafi performans analizi
+   - Hedef ülke/bölge için optimize
+
+3. **Kullanıcı Deneyimi Sinyalleri:**
+
+   - Doğru dil → Daha uzun oturum süresi
+   - Düşük çıkış oranı
+   - Daha fazla sayfa görüntüleme
+   - Google için pozitif sinyal
+
+4. **Duplicate Content Önleme:**
+   - Hreflang → Google'a "bu alternatif içerik" der
+   - Canonical → Her dil için ayrı canonical
+   - HTML lang → Browser ve AI için sinyal
+
+**Multi-Dil SEO Checklist:**
+
+```typescript
+interface MultiLangSEOChecklist {
+  // Hreflang Tags (KRİTİK)
+  hreflangSelf: boolean; // Self-referencing tag var mı?
+  hreflangAlternates: boolean; // Tüm alternatif diller için tag var mı?
+  hreflangXDefault: boolean; // x-default tag var mı?
+  hreflangConsistency: boolean; // Tüm sayfalarda tutarlı mı?
+
+  // Canonical URLs
+  canonicalPerLanguage: boolean; // Her dil için ayrı canonical var mı?
+  canonicalNoDuplicate: boolean; // Farklı diller için aynı canonical YOK mu?
+
+  // HTML Attributes
+  htmlLangCorrect: boolean; // HTML lang attribute doğru mu?
+  htmlDirCorrect: boolean; // dir attribute (ltr/rtl) doğru mu?
+
+  // URL Structure
+  urlHierarchical: boolean; // URL hiyerarşik yapıda mı? (/tr/page, /en/page)
+  urlConsistent: boolean; // URL yapısı tüm dillerde tutarlı mı?
+
+  // Sitemap
+  sitemapHreflang: boolean; // Sitemap'te hreflang tag'leri var mı?
+  sitemapAllLanguages: boolean; // Tüm dil versiyonları sitemap'te mi?
+
+  // Meta Tags
+  metaDescriptionPerLanguage: boolean; // Her dil için ayrı meta description var mı?
+  ogLocaleCorrect: boolean; // OG locale doğru mu? (tr_TR, en_US)
+}
+```
+
+**Özgün Multi-Dil Mantra:** Her dil bir evren, her çeviri bir kapsül. Google'a gönderilen sinyaller, bu evrenlerin birbirleriyle nasıl ilişkili olduğunu net bir şekilde açıklar. Duplicate content değil, alternatif içerik olduğunu bilmeli.
+
+---
+
+## 🤖 Intelligent SEO Snippet System
+
+**Yaklaşım: Akıllı Snippet Injection (Intelligent Schema Injection)**
+
+HTML kodlarken, sayfa tipine göre otomatik olarak uygun Schema.org snippet'lerini ekle. Her sayfa kendi DNA'sını taşır - VideoGame sayfası VideoGame snippet'i, NewsArticle sayfası NewsArticle snippet'i.
+
+```typescript
+// Akıllı snippet sistemi metaforu
+interface IntelligentSnippetSystem {
+  detection: PageTypeDetector; // Sayfa tipini algıla
+  generation: SchemaGenerator; // Schema oluştur
+  injection: SchemaInjector; // Head'e enjekte et
+  validation: SchemaValidator; // Doğrula
+}
+
+// Sayfa tipi algılama önceliği
+type DetectionPriority =
+  | 'html-itemscope' // 1. En üst öncelik: <html itemscope>
+  | 'url-pattern' // 2. URL pattern: /games/, /news/
+  | 'semantic-html' // 3. Semantic HTML: <article>, <time>
+  | 'meta-og-type' // 4. OG meta: <meta og:type>
+  | 'default-webpage'; // 5. Varsayılan
+```
+
+**Özgün Snippet Injection Felsefesi:** Snippet'ler manuel değil, otomatik olsun. Sayfa tipi ne ise, o snippet'in enjekte edilmesi gerekiyor. AI kod asistanı da bu kuralı bilmeli.
+
+**Snippet Tipi Belirleme Mantığı:**
+
+```
+Yeni HTML sayfası oluşturuluyor
+  ↓
+Sayfa tipi analizi (priority order):
+  1. HTML itemscope attribute varsa → Schema type direkt
+  2. URL pattern varsa → /games/ → VideoGame
+  3. Semantic HTML varsa → <article> → Article
+  4. OG meta type varsa → og:type → Map edilir
+  5. Hiçbiri yoksa → WebPage (default)
+  ↓
+Uygun schema oluştur
+  ↓
+Head section'a JSON-LD enjekte et
+  ↓
+Missing fields warning göster
+```
+
+**Desteklenen Snippet Tipleri:**
+
+```typescript
+// 11 Farklı snippet tipi
+type SnippetType =
+  | 'VideoGame' // Oyun sayfaları
+  | 'NewsArticle' // Haber sayfaları
+  | 'Article' // Makale sayfaları
+  | 'BlogPosting' // Blog yazıları
+  | 'Product' // Ürün sayfaları
+  | 'Recipe' // Yemek tarifleri
+  | 'Event' // Etkinlik sayfaları
+  | 'Course' // Kurs/Eğitim sayfaları
+  | 'VideoObject' // Video sayfaları
+  | 'FAQPage' // SSS sayfaları
+  | 'WebPage'; // Genel sayfalar (default)
+
+// Her snippet tipi için minimum required fields
+interface SnippetRequirements {
+  VideoGame: ['name', 'description', 'image', 'gamePlatform'];
+  NewsArticle: ['headline', 'datePublished', 'author', 'publisher'];
+  Article: ['headline', 'author', 'datePublished'];
+  BlogPosting: ['headline', 'author', 'datePublished'];
+  Product: ['name', 'image', 'offers'];
+  Recipe: ['name', 'recipeIngredient', 'recipeInstructions'];
+  Event: ['name', 'startDate', 'location'];
+  Course: ['name', 'provider', 'educationalCredentialAwarded'];
+  VideoObject: ['name', 'thumbnailUrl', 'uploadDate'];
+  FAQPage: ['mainEntity'];
+  WebPage: ['name', 'description', 'url'];
+}
+```
+
+**URL Pattern Mapping:**
+
+```typescript
+// URL pattern'den snippet tipine mapping
+const urlPatternMapping = {
+  '/games/': 'VideoGame',
+  '/news/': 'NewsArticle',
+  '/haber/': 'NewsArticle',
+  '/articles/': 'Article',
+  '/blog/': 'BlogPosting',
+  '/products/': 'Product',
+  '/recipes/': 'Recipe',
+  '/tarif/': 'Recipe',
+  '/events/': 'Event',
+  '/etkinlik/': 'Event',
+  '/courses/': 'Course',
+  '/kurslar/': 'Course',
+  '/videos/': 'VideoObject',
+  '/faq': 'FAQPage',
+  '/sik-sorulan-sorular': 'FAQPage',
+  '/': 'WebPage', // Default
+};
+```
+
+**HTML Data Attribute Hints:**
+
+Sayfadaki verileri çıkarmak için data attribute'leri kullan:
+
+```html
+<!-- Rating -->
+<div data-rating-value="4.7" data-rating-count="6200"></div>
+
+<!-- Price -->
+<div data-price="99.99" data-currency="USD"></div>
+
+<!-- Platforms -->
+<div data-platforms="PC, Mac, iOS, Android"></div>
+
+<!-- Ingredients (Recipe) -->
+<ul data-ingredients>
+  <li data-ingredient="Malzeme 1">Malzeme 1</li>
+  <li data-ingredient="Malzeme 2">Malzeme 2</li>
+</ul>
+
+<!-- Instructions (Recipe) -->
+<ol data-instructions>
+  <li data-instruction="Adım 1">Adım 1</li>
+  <li data-instruction="Adım 2">Adım 2</li>
+</ol>
+
+<!-- FAQ Items -->
+<div data-faq-item>
+  <h3 data-question>Soru nedir?</h3>
+  <div data-answer>Cevap burada</div>
+</div>
+
+<!-- Reviews -->
+<div data-review>
+  <span data-reviewer="Ahmet Yılmaz">Ahmet Yılmaz</span>
+  <span data-review-rating="5">5</span>
+  <p data-review-body>Harika bir ürün!</p>
+</div>
+
+<!-- Event Dates -->
+<time datetime="2024-06-15T18:00:00Z" data-start-date>15 Haziran 2024</time>
+<div data-location="Etkinlik Mekanı" data-address="Adres bilgisi"></div>
+```
+
+**Snippet Generation Templates:**
+
+```javascript
+// VideoGame Snippet Template
+const videoGameTemplate = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoGame',
+  name: 'Oyun İsmi',
+  description: 'Açıklama',
+  image: 'https://example.com/image.jpg',
+  gamePlatform: ['PC', 'Mac', 'iOS', 'Android'],
+  applicationCategory: 'GameApplication',
+  genre: 'Action',
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.7',
+    ratingCount: '6200',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'DigitalContent',
+    logo: 'https://digitalcontent.store/logo.png',
+  },
+};
+
+// NewsArticle Snippet Template
+const newsArticleTemplate = {
+  '@context': 'https://schema.org',
+  '@type': 'NewsArticle',
+  headline: 'Haber Başlığı',
+  description: 'Açıklama',
+  image: 'https://example.com/image.jpg',
+  datePublished: '2024-01-15T10:00:00Z',
+  dateModified: '2024-01-15T10:00:00Z',
+  author: {
+    '@type': 'Person',
+    name: 'Yazar İsmi',
+  },
+  publisher: {
+    '@type': 'NewsMediaOrganization',
+    name: 'DigitalContent News',
+    logo: 'https://digitalcontent.store/logo.png',
+  },
+};
+
+// Recipe Snippet Template
+const recipeTemplate = {
+  '@context': 'https://schema.org',
+  '@type': 'Recipe',
+  name: 'Tarif İsmi',
+  description: 'Açıklama',
+  image: 'https://example.com/image.jpg',
+  author: {
+    '@type': 'Person',
+    name: 'Şef İsmi',
+  },
+  prepTime: 'PT30M',
+  cookTime: 'PT45M',
+  recipeIngredient: ['Malzeme 1', 'Malzeme 2'],
+  recipeInstructions: [
+    {
+      '@type': 'HowToStep',
+      position: 1,
+      text: 'Adım 1',
+    },
+  ],
+};
+```
+
+**AI Coding Assistant Integration:**
+
+Cursor veya AI kod asistanı bu kuralları bilmeli. HTML sayfası oluştururken:
+
+```javascript
+// Otomatik snippet injection süreci
+1. Detect page type from:
+   - URL pattern
+   - HTML structure
+   - Meta tags
+   - Content markers
+
+2. Generate schema JSON:
+   - Select appropriate template
+   - Extract data from HTML
+   - Fill required fields
+
+3. Inject into <head>:
+   - Create <script type="application/ld+json">
+   - Append to head
+
+4. Validate:
+   - Check required fields
+   - Warn about missing data
+
+5. User feedback:
+   - Show injection success
+   - Suggest improvements
+```
+
+**Intelligent SEO Module Implementation:**
+
+```typescript
+// js/modules/seo/IntelligentSEOModule.js
+class IntelligentSEOModule {
+  constructor() {
+    this.pageType = null;
+    this.schema = null;
+  }
+
+  init() {
+    // 1. Detect page type
+    this.pageType = PageTypeDetector.detect();
+
+    // 2. Generate schema
+    this.schema = SchemaGenerator.generate(this.pageType);
+
+    // 3. Inject to head
+    this.injectSchema();
+
+    // 4. Update OG meta
+    this.updateOGMeta();
+
+    // 5. Validate
+    this.validate();
+  }
+
+  detectPageType() {
+    // Priority order:
+    // 1. HTML itemscope
+    // 2. URL pattern
+    // 3. Semantic HTML
+    // 4. OG type
+    // 5. Default
+  }
+
+  generateSchema() {
+    // Template-based generation
+    // Extract data from HTML
+    // Merge with existing schema
+  }
+
+  injectSchema() {
+    // Create JSON-LD script
+    // Append to head
+    // Or merge with existing
+  }
+}
+```
+
+**Developer Feedback Messages:**
+
+Her snippet injection'da kullanıcıya feedback ver:
+
+```
+✅ SEO Snippet injected: NewsArticle
+📋 Added fields:
+   - headline: Haber Başlığı
+   - datePublished: 2024-01-15T10:00:00Z
+   - author: Yazar İsmi
+
+💡 Tips:
+   - Add ratings for better visibility
+   - Add structured images
+   - Add publisher logo
+```
+
+**Missing Fields Warning:**
+
+```
+⚠️ Warning: Missing required field 'datePublished'
+💡 Suggested fix:
+   - Add: <time datetime="2024-01-15T10:00:00Z">
+   OR
+   - Add: <meta property="article:published_time" content="2024-01-15T10:00:00Z">
+```
+
+**Modül Karar Süreci:**
+
+```
+Yeni kod yazılıyor → HTML sayfası mı?
+  ├─> Evet → Snippet injection gerekli
+  │     ↓
+  │   Sayfa tipini algıla
+  │     ↓
+  │   Uygun snippet oluştur
+  │     ↓
+  │   Head'e enjekte et
+  │     ↓
+  │   Validation yap
+  └─> Hayır → Normal akış
+```
+
+---
+
+## 📊 Analytics & Measurement (Hit Tracking)
+
+**Yaklaşım: Gözlem ve Ölçüm Evreni (Observation & Measurement Universe)**
+
+Traffic çekmek yeterli değil - ölçmek, anlamak ve optimize etmek gerekir. Her ziyaretçi bir hikaye, her click bir veri noktası.
+
+```typescript
+// Analytics metaforu
+interface AnalyticsUniverse {
+  events: TrackedEvent[]; // İzlenen olaylar
+  metrics: Metric[]; // Metrikler
+  funnels: ConversionFunnel[]; // Dönüşüm hunileri
+  insights: Insight[]; // İçgörüler
+}
+
+type TrackedEvent =
+  | 'page_view' // Sayfa görüntüleme
+  | 'scroll_depth' // Scroll derinliği
+  | 'time_on_page' // Sayfada kalma süresi
+  | 'social_share' // Sosyal paylaşım
+  | 'newsletter_signup' // Newsletter kaydı
+  | 'form_submit' // Form gönderimi
+  | 'video_watch' // Video izleme
+  | 'download'; // Dosya indirme
+```
+
+**Analytics Modül Yapısı:**
+
+```typescript
+// js/modules/analytics/AnalyticsModule.js
+interface IAnalyticsModule {
+  trackEvent(eventName: string, data: EventData): void;
+  trackPageView(pageData: PageData): void;
+  trackConversion(conversionData: ConversionData): void;
+  trackEngagement(engagementData: EngagementData): void;
+}
+
+class AnalyticsModule implements IAnalyticsModule {
+  trackScrollDepth() {
+    const milestones = [25, 50, 75, 100];
+    milestones.forEach((percent) => {
+      window.addEventListener('scroll', () => {
+        const scrollPercent = this.calculateScrollPercent();
+        if (scrollPercent >= percent) {
+          this.trackEvent('scroll_depth', { percent });
+        }
+      });
+    });
+  }
+
+  trackExitIntent() {
+    document.addEventListener('mouseleave', (e) => {
+      if (e.clientY < 0) {
+        this.trackEvent('exit_intent', { page: window.location.pathname });
+      }
+    });
+  }
+
+  trackSocialShare(platform: string) {
+    this.trackEvent('social_share', {
+      platform,
+      url: window.location.href,
+      title: document.title,
+    });
+  }
+}
+```
+
+**Google Analytics 4 Events:**
+
+```javascript
+// Özel event tracking
+gtag('event', 'content_view', {
+  content_type: 'article',
+  content_id: '123',
+  engagement_time_msec: 5000,
+});
+
+gtag('event', 'share', {
+  method: 'facebook',
+  content_type: 'article',
+  item_id: '123',
+});
+```
+
+---
+
+## 🔗 Content Strategy & Internal Linking
+
+**Yaklaşım: İçerik Ağı ve Link Dokusu (Content Network & Link Weave)**
+
+İçerik, bir ağ gibi örülmeli. Her makale diğer makalelere bağlı, her link bir yol. İyi örülmüş ağ, kullanıcıları ve arama motorlarını içeride tutar.
+
+```typescript
+// İçerik ağı metaforu
+interface ContentNetwork {
+  nodes: ContentNode[]; // İçerik düğümleri
+  edges: ContentEdge[]; // Link kenarları
+  clusters: TopicCluster[]; // Konu kümeleri
+  hubs: HubPage[]; // Hub sayfaları
+}
+
+type ContentNode = {
+  id: string;
+  title: string;
+  url: string;
+  keywords: string[];
+  related: string[]; // İlgili içerik ID'leri
+};
+
+type TopicCluster = {
+  hub: HubPage; // Ana hub sayfası
+  pillars: PillarPage[]; // Destek sayfaları
+  clusters: ContentNode[]; // İlgili içerikler
+};
+```
+
+**İçerik Ağı Stratejisi:**
+
+```
+        Hub Page (Ana Konu)
+              │
+    ┌─────────┼─────────┐
+    │         │         │
+Pillar 1  Pillar 2  Pillar 3
+    │         │         │
+    └───┬─────┴─────┬───┘
+        │           │
+    Cluster 1   Cluster 2
+```
+
+**Internal Linking Modülü:**
+
+```typescript
+// js/modules/content/InternalLinkingModule.js
+class InternalLinkingModule {
+  generateRelatedContent(currentArticle: Article) {
+    // AI/ML ile benzer içerik bulma
+    // Tag-based matching
+    // Semantic similarity
+
+    return this.findRelatedByTags(currentArticle.tags)
+      .concat(this.findRelatedByKeywords(currentArticle.keywords))
+      .sort((a, b) => b.relevance - a.relevance)
+      .slice(0, 5); // Top 5 related
+  }
+
+  optimizeLinkJuice(pages: Page[]) {
+    // PageRank benzeri algoritma
+    // Link juice dağıtımı
+    // Anchor text optimizasyonu
+  }
+}
+```
+
+---
+
+## 🌐 Multi-Channel Traffic Sources
+
+**Özgün Trafik Kaynağı Stratejisi:**
+
+1. **Organik Arama (SEO)**
+
+   - Keyword research
+   - Content optimization
+   - Technical SEO
+   - Link building
+
+2. **Sosyal Medya**
+
+   ```javascript
+   // js/modules/social/SocialMediaModule.js
+   class SocialMediaModule {
+     setupSharingButtons() {
+       // Facebook, Twitter, LinkedIn, WhatsApp, Telegram
+     }
+
+     autoPostToSocial(content: Content) {
+       // Yeni içerik yayınlandığında otomatik paylaş
+     }
+
+     trackSocialTraffic() {
+       // Sosyal medyadan gelen trafiği izle
+     }
+   }
+   ```
+
+3. **E-posta Marketing**
+
+   ```javascript
+   // js/modules/email/EmailMarketingModule.js
+   class EmailMarketingModule {
+     collectEmails() {
+       // Newsletter signup
+       // Content gating
+       // Exit intent popup
+     }
+
+     sendNewsletter(content: Content[]) {
+       // Haftalık/aylık newsletter
+     }
+
+     sendAutomatedEmails() {
+       // Welcome email
+       // Abandoned cart (e-ticaret)
+       // Re-engagement
+     }
+   }
+   ```
+
+4. **Push Notifications**
+
+   - Browser push
+   - Mobile push (PWA)
+   - Web push
+
+5. **Referral Traffic**
+   - Guest posting
+   - Backlink strategy
+   - Partnership
+
+---
+
+## 🎨 Engagement & Retention Optimization
+
+**Yaklaşım: Kullanıcı Bağlılığı ve Tutma Mekanizmaları (User Engagement & Retention Mechanisms)**
+
+Traffic çekmek önemli ama kullanıcıları içeride tutmak daha önemli. Her engagement sinyali, arama motorlarına "bu site değerli" der.
+
+```typescript
+// Engagement metaforu
+interface EngagementMechanism {
+  hooks: EngagementHook[]; // Kullanıcıyı tutan kancalar
+  rewards: Reward[]; // Ödüller
+  gamification: GameElement[]; // Oyunlaştırma
+  social: SocialProof[]; // Sosyal kanıt
+}
+
+type EngagementHook =
+  | 'comments' // Yorum sistemi
+  | 'reactions' // Beğeni/reaction butonları
+  | 'bookmarks' // Favorilere ekleme
+  | 'reading-time' // Okuma süresi gösterimi
+  | 'progress-bar' // İçerik ilerleme çubuğu
+  | 'related-content'; // İlgili içerik önerileri
+```
+
+**Engagement Modül Yapısı:**
+
+```typescript
+// js/modules/engagement/EngagementModule.js
+interface IEngagementModule {
+  setupComments(): void;
+  setupReactions(): void;
+  showReadingProgress(): void;
+  displaySocialProof(): void;
+  trackEngagementMetrics(): void;
+}
+
+class EngagementModule implements IEngagementModule {
+  setupReadingProgress() {
+    // Scroll bazlı okuma ilerlemesi
+    window.addEventListener('scroll', () => {
+      const progress = this.calculateReadingProgress();
+      this.updateProgressBar(progress);
+    });
+  }
+
+  displaySocialProof() {
+    // "Şu anda X kişi bu sayfayı görüntülüyor"
+    // "Bu içerik Y kişi tarafından beğenildi"
+    // "Z kişi bu içeriği paylaştı"
+  }
+
+  trackTimeOnPage() {
+    // Sayfada kalma süresini izle
+    // Scroll depth'i izle
+    // Click heatmap'i oluştur
+  }
+}
+```
+
+---
+
+## 📱 Mobile-First & Performance
+
+**Yaklaşım: Mobil Öncelikli ve Performans Mükemmelliği (Mobile-First & Performance Excellence)**
+
+Mobil kullanıcılar çoğunlukta. Mobil deneyim, desktop deneyimden daha önemli. Hız, kullanılabilirlik ve performans kritik.
+
+**Mobile-First Checklist:**
+
+```typescript
+interface MobileOptimization {
+  responsive: boolean; // Responsive tasarım
+  touchFriendly: boolean; // Dokunmatik uyumlu
+  fastLoading: boolean; // Hızlı yüklenme
+  offlineCapable: boolean; // Offline çalışabilir (PWA)
+  installable: boolean; // Ana ekrana eklenebilir
+}
+
+// js/modules/performance/MobileOptimizationModule.js
+class MobileOptimizationModule {
+  optimizeImages() {
+    // WebP format
+    // Lazy loading
+    // Responsive images (srcset)
+    // Compression
+  }
+
+  enablePWA() {
+    // Service worker
+    // Manifest.json
+    // Offline support
+    // Push notifications
+  }
+}
+```
+
+**Performance Optimization:**
+
+```javascript
+// Core Web Vitals optimization
+const optimizePerformance = {
+  lcp: 'Largest Contentful Paint < 2.5s',
+  fid: 'First Input Delay < 100ms',
+  cls: 'Cumulative Layout Shift < 0.1',
+};
+
+// Techniques
+const techniques = [
+  'Lazy loading images',
+  'Code splitting',
+  'CDN usage',
+  'Browser caching',
+  'Gzip compression',
+  'Critical CSS inline',
+  'Defer non-critical JS',
+];
+```
+
+---
+
+## 🎯 SEO & Traffic Optimization Complete Checklist
+
+**Özgün SEO Checklist (Modüler Yaklaşım):**
+
+```typescript
+interface SEOCompleteChecklist {
+  // Foundation
+  semanticHTML: boolean;
+  metaTags: boolean;
+  structuredData: boolean;
+  robotsTxt: boolean;
+  sitemapXml: boolean;
+
+  // Content
+  qualityContent: boolean; // 300+ kelime
+  keywordOptimization: boolean;
+  internalLinking: boolean;
+  altTexts: boolean;
+
+  // Technical
+  httpsEnabled: boolean;
+  mobileFriendly: boolean;
+  pageSpeedOptimized: boolean;
+  coreWebVitalsPassed: boolean;
+
+  // Multi-Language (i18n) - Duplicate Content Prevention
+  hreflangTags: boolean; // Tüm sayfalarda hreflang tag'leri var mı?
+  htmlLangAttribute: boolean; // HTML lang attribute doğru mu?
+  canonicalPerLanguage: boolean; // Her dil için ayrı canonical var mı?
+  sitemapMultiLang: boolean; // Sitemap'te hreflang etiketleri var mı?
+  urlStructureHierarchical: boolean; // URL yapısı hiyerarşik mi? (/tr/, /en/)
+
+  // Engagement
+  socialSharing: boolean;
+  newsletterSignup: boolean;
+  pushNotifications: boolean;
+  commentsSystem: boolean;
+
+  // Analytics
+  analyticsSetup: boolean;
+  eventTracking: boolean;
+  conversionTracking: boolean;
+}
+```
+
+**Modül Implementasyonu:**
+
+```typescript
+// js/modules/seo/SEOOptimizationModule.js
+class SEOOptimizationModule {
+  async initialize() {
+    // Tüm SEO modüllerini başlat
+    await this.seoModule.initialize();
+    await this.schemaModule.initialize();
+    await this.sitemapModule.generate();
+    await this.analyticsModule.setup();
+    await this.socialModule.setup();
+    await this.newsletterModule.setup();
+  }
+}
+```
+
+---
+
+## 🗄️ Supabase & Serverless Backend Ecosystem
+
+**Yaklaşım: Bulut Ekosistemi ve Serverless Organizmalar (Cloud Ecosystem & Serverless Organisms)**
+
+Supabase, bir bulut ekosistemidir. Her servis (Database, Auth, Storage, Realtime) kendi organizması gibi davranır - bağımsız yaşar ama aynı ekosistemde birlikte çalışır. Full Modular yapıda, her Supabase servisi bir Thought Capsule olarak düşünülür.
+
+```typescript
+// Supabase ekosistemi metaforu - Full Modular Yapı
+interface SupabaseEcosystem {
+  core: SupabaseCore; // Çekirdek bağlantı
+  capsules: SupabaseCapsule[]; // Her servis bir kapsül
+  portals: SupabasePortal[]; // Dışa açılan portallar
+  shields: SecurityShield[]; // Güvenlik kalkanları
+  lifecycle: EcosystemLifecycle; // Ekosistem yaşam döngüsü
+}
+
+// Supabase Kapsül Türleri
+type SupabaseCapsuleType =
+  | 'database' // PostgreSQL veritabanı - veri organizmalarının evi
+  | 'auth' // Kimlik doğrulama - kullanıcı kapıları
+  | 'storage' // Dosya deposu - medya organizmaları
+  | 'realtime' // Canlı iletişim - anlık yayın dalgaları
+  | 'functions' // Edge fonksiyonlar - sunucu organizmaları
+  | 'edge'; // Edge computing - sınır organizmaları;
+
+// Supabase Ekosistemi Organizasyonu
+interface SupabaseCapsule<T> extends ThoughtCapsule<T> {
+  supabaseType: SupabaseCapsuleType;
+  connection: SupabaseConnection; // Supabase client bağlantısı
+  rls: RowLevelSecurity; // Satır seviyesi güvenlik kalkanı
+  policies: SecurityPolicy[]; // Güvenlik politikaları
+  subscriptions: RealtimeSubscription[]; // Canlı abonelikler
+}
+```
+
+**Özgün Supabase Felsefesi:** Supabase, sadece bir backend değil - bir bulut ekosistemidir. Her servis kendi DNA'sını taşır, kendi yaşam döngüsüne sahiptir. Full Modular yapıda, her Supabase modülü tam bağımsız bir Thought Capsule'dur.
+
+**Supabase Ekosistem Haritası:**
+
+```
+        Supabase Ecosystem (Bulut Evren)
+                 │
+    ┌────────────┼────────────┐
+    │            │            │
+[Database]   [Auth]    [Storage]
+  (SQL)    (Kapılar)  (Depolar)
+    │            │            │
+    └──────┬─────┴──────┬─────┘
+           │           │
+    [Realtime]    [Functions]
+   (Dalgalar)   (Organizmalar)
+```
+
+**Özgün Supabase Karar Süreci:**
+
+```
+Backend gereksinimi var
+  ↓
+Ne tür bir ekosistem lazım?
+  ├─> SQL veritabanı → Database Capsule
+  ├─> Kullanıcı girişi → Auth Capsule
+  ├─> Dosya yükleme → Storage Capsule
+  ├─> Canlı güncelleme → Realtime Capsule
+  └─> Sunucu mantığı → Functions Capsule
+
+Her kapsül bağımsız modül
+  ↓
+Interface tanımla (Contract First)
+  ↓
+RLS politikaları belirle (Güvenlik Kalkanları)
+  ↓
+Modülü implemente et ve kayıt defterine ekle
+```
+
+**Full Modular Supabase Modül Yapısı:**
+
+```typescript
+// modules/supabase/interfaces/ISupabaseModule.ts
+interface ISupabaseModule {
+  // Yaşam döngüsü
+  initialize(config: SupabaseConfig): Promise<void>;
+  activate(): Promise<void>;
+  deactivate(): Promise<void>;
+  destroy(): Promise<void>;
+
+  // Bağlantı yönetimi
+  getClient(): SupabaseClient;
+  getConnectionStatus(): ConnectionStatus;
+
+  // Event'ler
+  onConnectionChange(callback: (status: ConnectionStatus) => void): void;
+  onError(callback: (error: SupabaseError) => void): void;
+}
+
+// modules/supabase/interfaces/IDatabaseModule.ts
+interface IDatabaseModule extends ISupabaseModule {
+  // Query işlemleri
+  query<T>(table: string): QueryBuilder<T>;
+  select<T>(table: string, columns?: string[]): Promise<T[]>;
+  insert<T>(table: string, data: Partial<T>): Promise<T>;
+  update<T>(table: string, id: string, data: Partial<T>): Promise<T>;
+  delete<T>(table: string, id: string): Promise<void>;
+
+  // RLS kontrolü
+  checkRLS(table: string): Promise<RLSStatus>;
+  getPolicies(table: string): Promise<Policy[]>;
+
+  // Transaction yönetimi
+  transaction<T>(callback: (tx: Transaction) => Promise<T>): Promise<T>;
+}
+
+// modules/supabase/interfaces/IAuthModule.ts
+interface IAuthModule extends ISupabaseModule {
+  // Kimlik doğrulama
+  signUp(credentials: SignUpCredentials): Promise<AuthResponse>;
+  signIn(credentials: SignInCredentials): Promise<AuthResponse>;
+  signOut(): Promise<void>;
+
+  // Oturum yönetimi
+  getSession(): Promise<Session | null>;
+  refreshSession(): Promise<Session>;
+
+  // Kullanıcı yönetimi
+  getUser(): Promise<User | null>;
+  updateUser(data: UserUpdateData): Promise<User>;
+
+  // Event'ler
+  onAuthStateChange(callback: (event: AuthChangeEvent, session: Session | null) => void): void;
+}
+
+// modules/supabase/interfaces/IStorageModule.ts
+interface IStorageModule extends ISupabaseModule {
+  // Bucket yönetimi
+  getBucket(bucketName: string): StorageBucket;
+  listBuckets(): Promise<Bucket[]>;
+
+  // Dosya işlemleri
+  upload(bucket: string, path: string, file: File): Promise<UploadResponse>;
+  download(bucket: string, path: string): Promise<Blob>;
+  delete(bucket: string, path: string): Promise<void>;
+  list(bucket: string, path?: string): Promise<FileObject[]>;
+
+  // URL oluşturma
+  getPublicUrl(bucket: string, path: string): string;
+  createSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string>;
+}
+
+// modules/supabase/interfaces/IRealtimeModule.ts
+interface IRealtimeModule extends ISupabaseModule {
+  // Channel yönetimi
+  channel(channelName: string): RealtimeChannel;
+  subscribe(channel: RealtimeChannel, callback: (payload: RealtimePayload) => void): void;
+  unsubscribe(channel: RealtimeChannel): void;
+
+  // Table subscriptions
+  onTableChange<T>(table: string, callback: (payload: TableChangePayload<T>) => void): void;
+  onTableInsert<T>(table: string, callback: (payload: InsertPayload<T>) => void): void;
+  onTableUpdate<T>(table: string, callback: (payload: UpdatePayload<T>) => void): void;
+  onTableDelete<T>(table: string, callback: (payload: DeletePayload<T>) => void): void;
+}
+```
+
+**Supabase Modül Implementasyonu (Full Modular):**
+
+```typescript
+// modules/supabase/core/SupabaseCoreModule.ts
+class SupabaseCoreModule implements ISupabaseModule {
+  private client: SupabaseClient | null = null;
+  private config: SupabaseConfig | null = null;
+  private connectionListeners: Array<(status: ConnectionStatus) => void> = [];
+  private errorListeners: Array<(error: SupabaseError) => void> = [];
+
+  async initialize(config: SupabaseConfig): Promise<void> {
+    this.config = config;
+    this.client = createClient(config.url, config.anonKey, {
+      auth: {
+        persistSession: config.persistSession ?? true,
+        autoRefreshToken: config.autoRefreshToken ?? true,
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: config.realtimeEventsPerSecond ?? 10,
+        },
+      },
+    });
+
+    // Bağlantı durumunu izle
+    this.setupConnectionMonitoring();
+  }
+
+  async activate(): Promise<void> {
+    if (!this.client) {
+      throw new Error('Supabase client not initialized');
+    }
+    // Modül aktif - hazır kullanıma
+  }
+
+  async deactivate(): Promise<void> {
+    // Abonelikleri kapat, bağlantıları temizle
+    if (this.client) {
+      await this.client.realtime.disconnect();
+    }
+  }
+
+  async destroy(): Promise<void> {
+    await this.deactivate();
+    this.client = null;
+    this.config = null;
+    this.connectionListeners = [];
+    this.errorListeners = [];
+  }
+
+  getClient(): SupabaseClient {
+    if (!this.client) {
+      throw new Error('Supabase client not initialized');
+    }
+    return this.client;
+  }
+
+  getConnectionStatus(): ConnectionStatus {
+    if (!this.client) {
+      return { connected: false, status: 'disconnected' };
+    }
+    return {
+      connected: true,
+      status: this.client.realtime.isConnected() ? 'connected' : 'connecting',
+    };
+  }
+
+  private setupConnectionMonitoring(): void {
+    // Bağlantı durumu izleme mantığı
+    this.client?.realtime.onOpen(() => {
+      this.notifyConnectionChange({ connected: true, status: 'connected' });
+    });
+
+    this.client?.realtime.onClose(() => {
+      this.notifyConnectionChange({ connected: false, status: 'disconnected' });
+    });
+  }
+
+  private notifyConnectionChange(status: ConnectionStatus): void {
+    this.connectionListeners.forEach((callback) => callback(status));
+  }
+
+  onConnectionChange(callback: (status: ConnectionStatus) => void): void {
+    this.connectionListeners.push(callback);
+  }
+
+  onError(callback: (error: SupabaseError) => void): void {
+    this.errorListeners.push(callback);
+  }
+}
+
+// modules/supabase/database/DatabaseModule.ts
+class DatabaseModule extends SupabaseCoreModule implements IDatabaseModule {
+  async select<T>(table: string, columns?: string[]): Promise<T[]> {
+    const client = this.getClient();
+    let query = client.from(table).select(columns ? columns.join(',') : '*');
+
+    const { data, error } = await query;
+
+    if (error) {
+      this.handleError(error);
+      throw new DatabaseError(error.message, error);
+    }
+
+    return data as T[];
+  }
+
+  async insert<T>(table: string, data: Partial<T>): Promise<T> {
+    const client = this.getClient();
+    const { data: inserted, error } = await client.from(table).insert(data).select().single();
+
+    if (error) {
+      this.handleError(error);
+      throw new DatabaseError(error.message, error);
+    }
+
+    return inserted as T;
+  }
+
+  async update<T>(table: string, id: string, data: Partial<T>): Promise<T> {
+    const client = this.getClient();
+    const { data: updated, error } = await client
+      .from(table)
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      this.handleError(error);
+      throw new DatabaseError(error.message, error);
+    }
+
+    return updated as T;
+  }
+
+  async delete<T>(table: string, id: string): Promise<void> {
+    const client = this.getClient();
+    const { error } = await client.from(table).delete().eq('id', id);
+
+    if (error) {
+      this.handleError(error);
+      throw new DatabaseError(error.message, error);
+    }
+  }
+
+  query<T>(table: string): QueryBuilder<T> {
+    const client = this.getClient();
+    return client.from(table) as QueryBuilder<T>;
+  }
+
+  async checkRLS(table: string): Promise<RLSStatus> {
+    // RLS durumunu kontrol et
+    const client = this.getClient();
+    // Supabase'de RLS kontrolü için özel sorgu
+    return { enabled: true, policies: [] };
+  }
+
+  async getPolicies(table: string): Promise<Policy[]> {
+    // Politika bilgilerini al
+    return [];
+  }
+
+  async transaction<T>(callback: (tx: Transaction) => Promise<T>): Promise<T> {
+    // Transaction wrapper - Supabase'de transaction desteği
+    const client = this.getClient();
+    // Supabase transaction implementasyonu
+    return callback(client as unknown as Transaction);
+  }
+}
+
+// modules/supabase/auth/AuthModule.ts
+class AuthModule extends SupabaseCoreModule implements IAuthModule {
+  async signUp(credentials: SignUpCredentials): Promise<AuthResponse> {
+    const client = this.getClient();
+    const { data, error } = await client.auth.signUp({
+      email: credentials.email,
+      password: credentials.password,
+      options: credentials.options,
+    });
+
+    if (error) {
+      this.handleError(error);
+      throw new AuthError(error.message, error);
+    }
+
+    return {
+      user: data.user,
+      session: data.session,
+    };
+  }
+
+  async signIn(credentials: SignInCredentials): Promise<AuthResponse> {
+    const client = this.getClient();
+    const { data, error } = await client.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
+    });
+
+    if (error) {
+      this.handleError(error);
+      throw new AuthError(error.message, error);
+    }
+
+    return {
+      user: data.user,
+      session: data.session,
+    };
+  }
+
+  async signOut(): Promise<void> {
+    const client = this.getClient();
+    const { error } = await client.auth.signOut();
+
+    if (error) {
+      this.handleError(error);
+      throw new AuthError(error.message, error);
+    }
+  }
+
+  async getSession(): Promise<Session | null> {
+    const client = this.getClient();
+    const {
+      data: { session },
+      error,
+    } = await client.auth.getSession();
+
+    if (error) {
+      this.handleError(error);
+      return null;
+    }
+
+    return session;
+  }
+
+  async refreshSession(): Promise<Session> {
+    const client = this.getClient();
+    const {
+      data: { session },
+      error,
+    } = await client.auth.refreshSession();
+
+    if (error) {
+      this.handleError(error);
+      throw new AuthError(error.message, error);
+    }
+
+    if (!session) {
+      throw new AuthError('No session available');
+    }
+
+    return session;
+  }
+
+  async getUser(): Promise<User | null> {
+    const client = this.getClient();
+    const {
+      data: { user },
+      error,
+    } = await client.auth.getUser();
+
+    if (error) {
+      this.handleError(error);
+      return null;
+    }
+
+    return user;
+  }
+
+  async updateUser(data: UserUpdateData): Promise<User> {
+    const client = this.getClient();
+    const {
+      data: { user },
+      error,
+    } = await client.auth.updateUser(data);
+
+    if (error) {
+      this.handleError(error);
+      throw new AuthError(error.message, error);
+    }
+
+    if (!user) {
+      throw new AuthError('User update failed');
+    }
+
+    return user;
+  }
+
+  onAuthStateChange(callback: (event: AuthChangeEvent, session: Session | null) => void): void {
+    const client = this.getClient();
+    client.auth.onAuthStateChange(callback);
+  }
+}
+
+// modules/supabase/storage/StorageModule.ts
+class StorageModule extends SupabaseCoreModule implements IStorageModule {
+  getBucket(bucketName: string): StorageBucket {
+    const client = this.getClient();
+    return client.storage.from(bucketName);
+  }
+
+  async listBuckets(): Promise<Bucket[]> {
+    const client = this.getClient();
+    const { data, error } = await client.storage.listBuckets();
+
+    if (error) {
+      this.handleError(error);
+      throw new StorageError(error.message, error);
+    }
+
+    return data;
+  }
+
+  async upload(bucket: string, path: string, file: File): Promise<UploadResponse> {
+    const bucketInstance = this.getBucket(bucket);
+    const { data, error } = await bucketInstance.upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+    if (error) {
+      this.handleError(error);
+      throw new StorageError(error.message, error);
+    }
+
+    return {
+      path: data.path,
+      fullPath: `${bucket}/${data.path}`,
+      publicUrl: this.getPublicUrl(bucket, data.path),
+    };
+  }
+
+  async download(bucket: string, path: string): Promise<Blob> {
+    const bucketInstance = this.getBucket(bucket);
+    const { data, error } = await bucketInstance.download(path);
+
+    if (error) {
+      this.handleError(error);
+      throw new StorageError(error.message, error);
+    }
+
+    return data;
+  }
+
+  async delete(bucket: string, path: string): Promise<void> {
+    const bucketInstance = this.getBucket(bucket);
+    const { error } = await bucketInstance.remove([path]);
+
+    if (error) {
+      this.handleError(error);
+      throw new StorageError(error.message, error);
+    }
+  }
+
+  async list(bucket: string, path?: string): Promise<FileObject[]> {
+    const bucketInstance = this.getBucket(bucket);
+    const { data, error } = await bucketInstance.list(path || '', {
+      limit: 100,
+      offset: 0,
+      sortBy: { column: 'name', order: 'asc' },
+    });
+
+    if (error) {
+      this.handleError(error);
+      throw new StorageError(error.message, error);
+    }
+
+    return data;
+  }
+
+  getPublicUrl(bucket: string, path: string): string {
+    const client = this.getClient();
+    const { data } = client.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async createSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string> {
+    const bucketInstance = this.getBucket(bucket);
+    const { data, error } = await bucketInstance.createSignedUrl(path, expiresIn);
+
+    if (error) {
+      this.handleError(error);
+      throw new StorageError(error.message, error);
+    }
+
+    return data.signedUrl;
+  }
+}
+
+// modules/supabase/realtime/RealtimeModule.ts
+class RealtimeModule extends SupabaseCoreModule implements IRealtimeModule {
+  private channels: Map<string, RealtimeChannel> = new Map();
+
+  channel(channelName: string): RealtimeChannel {
+    if (this.channels.has(channelName)) {
+      return this.channels.get(channelName)!;
+    }
+
+    const client = this.getClient();
+    const channel = client.channel(channelName);
+    this.channels.set(channelName, channel);
+    return channel;
+  }
+
+  subscribe(channel: RealtimeChannel, callback: (payload: RealtimePayload) => void): void {
+    channel.on('broadcast', { event: '*' }, callback).subscribe();
+  }
+
+  unsubscribe(channel: RealtimeChannel): void {
+    channel.unsubscribe();
+    this.channels.delete(channel.channelName);
+  }
+
+  onTableChange<T>(table: string, callback: (payload: TableChangePayload<T>) => void): void {
+    const client = this.getClient();
+    const channel = this.channel(`realtime:${table}`);
+
+    channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
+      .subscribe();
+  }
+
+  onTableInsert<T>(table: string, callback: (payload: InsertPayload<T>) => void): void {
+    const client = this.getClient();
+    const channel = this.channel(`realtime:${table}`);
+
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: table }, callback)
+      .subscribe();
+  }
+
+  onTableUpdate<T>(table: string, callback: (payload: UpdatePayload<T>) => void): void {
+    const client = this.getClient();
+    const channel = this.channel(`realtime:${table}`);
+
+    channel
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: table }, callback)
+      .subscribe();
+  }
+
+  onTableDelete<T>(table: string, callback: (payload: DeletePayload<T>) => void): void {
+    const client = this.getClient();
+    const channel = this.channel(`realtime:${table}`);
+
+    channel
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: table }, callback)
+      .subscribe();
+  }
+
+  async deactivate(): Promise<void> {
+    // Tüm kanalları kapat
+    for (const channel of this.channels.values()) {
+      channel.unsubscribe();
+    }
+    this.channels.clear();
+    await super.deactivate();
+  }
+}
+```
+
+**Supabase Modül Registry (Dependency Injection):**
+
+```typescript
+// modules/supabase/registry/SupabaseModuleRegistry.ts
+class SupabaseModuleRegistry {
+  private modules: Map<string, ISupabaseModule> = new Map();
+  private coreModule: SupabaseCoreModule | null = null;
+
+  register(name: string, module: ISupabaseModule): void {
+    this.modules.set(name, module);
+  }
+
+  resolve<T extends ISupabaseModule>(name: string): T {
+    const module = this.modules.get(name);
+    if (!module) {
+      throw new Error(`Module ${name} not found in registry`);
+    }
+    return module as T;
+  }
+
+  setCoreModule(core: SupabaseCoreModule): void {
+    this.coreModule = core;
+  }
+
+  getCoreModule(): SupabaseCoreModule {
+    if (!this.coreModule) {
+      throw new Error('Core Supabase module not initialized');
+    }
+    return this.coreModule;
+  }
+
+  async initializeAll(config: SupabaseConfig): Promise<void> {
+    // Core modülü başlat
+    const core = new SupabaseCoreModule();
+    await core.initialize(config);
+    this.setCoreModule(core);
+
+    // Tüm modülleri başlat
+    for (const module of this.modules.values()) {
+      await module.initialize(config);
+      await module.activate();
+    }
+  }
+
+  async destroyAll(): Promise<void> {
+    // Tüm modülleri kapat
+    for (const module of this.modules.values()) {
+      await module.deactivate();
+      await module.destroy();
+    }
+
+    if (this.coreModule) {
+      await this.coreModule.destroy();
+    }
+
+    this.modules.clear();
+    this.coreModule = null;
+  }
+}
+
+// Kullanım örneği
+const registry = new SupabaseModuleRegistry();
+
+// Modülleri kaydet
+registry.register('database', new DatabaseModule());
+registry.register('auth', new AuthModule());
+registry.register('storage', new StorageModule());
+registry.register('realtime', new RealtimeModule());
+
+// Başlat
+await registry.initializeAll({
+  url: 'https://xxxxx.supabase.co',
+  anonKey: 'your-anon-key',
+  persistSession: true,
+});
+
+// Kullanım
+const dbModule = registry.resolve<IDatabaseModule>('database');
+const users = await dbModule.select<User>('users');
+
+const authModule = registry.resolve<IAuthModule>('auth');
+const session = await authModule.getSession();
+```
+
+**Row Level Security (RLS) Felsefesi:**
+
+```typescript
+// RLS = Güvenlik Kalkanları (Security Shields)
+interface RowLevelSecurity {
+  enabled: boolean; // Kalkan aktif mi?
+  policies: SecurityPolicy[]; // Kalkan politikaları
+
+  // Politika türleri
+  selectPolicy: (table: string, role: string) => Policy;
+  insertPolicy: (table: string, role: string) => Policy;
+  updatePolicy: (table: string, role: string) => Policy;
+  deletePolicy: (table: string, role: string) => Policy;
+}
+
+// Özgün RLS Yaklaşımı: Her kalkan kendi kurallarıyla çalışır
+// Supabase SQL'de policy oluşturulur, modül sadece kontrol eder
+```
+
+**Özgün Supabase Karar Ağacı:**
+
+```
+Backend ihtiyacı doğdu
+  ↓
+Supabase uygun mu?
+  ├─> Evet → Ekosistem modüllerini kur
+  │     ↓
+  │   Core modülü başlat
+  │     ↓
+  │   Gerekli kapsülleri seç:
+  │     ├─> Veri saklama → Database Module
+  │     ├─> Kullanıcı yönetimi → Auth Module
+  │     ├─> Dosya yükleme → Storage Module
+  │     ├─> Canlı güncelleme → Realtime Module
+  │     └─> Sunucu mantığı → Functions Module
+  │     ↓
+  │   Her modülü registry'ye ekle
+  │     ↓
+  │   RLS politikalarını belirle (Güvenlik Kalkanları)
+  │     ↓
+  │   Interface kontratlarını tanımla
+  │     ↓
+  │   Modülleri initialize et
+  └─> Hayır → Alternatif backend çözümü ara
+```
+
+**Supabase Modül Yaşam Döngüsü:**
+
+```typescript
+interface SupabaseModuleLifecycle {
+  // 1. Initialize: Ekosisteme bağlan
+  initialize: (config: SupabaseConfig) => Promise<void>;
+
+  // 2. Activate: Kullanıma hazır hale getir
+  activate: () => Promise<void>;
+
+  // 3. Runtime: Çalışma zamanı (sürekli)
+  runtime: {
+    query: () => Promise<Data>;
+    subscribe: () => void;
+    listen: () => void;
+  };
+
+  // 4. Deactivate: Kullanımdan çıkar
+  deactivate: () => Promise<void>;
+
+  // 5. Destroy: Ekosistemden kopar
+  destroy: () => Promise<void>;
+}
+```
+
+**Supabase Güvenlik Kalkanları (Security Shields):**
+
+```typescript
+// Güvenlik kalkanı metaforu
+interface SecurityShield {
+  rls: RowLevelSecurity; // Satır seviyesi güvenlik
+  policies: Policy[]; // Politika kalkanları
+  apiKeys: {
+    anon: string; // Halka açık (güvenli)
+    service: string; // Sunucu tarafı (gizli)
+  };
+  cors: CORSConfig; // Cross-origin kalkanı
+  rateLimit: RateLimitConfig; // İstek sınırı kalkanı
+}
+
+// Özgün Güvenlik Mantrası: Her kapı bir kalkan, her politika bir koruma
+```
+
+**Supabase Modül Checklist (Full Modular):**
+
+```typescript
+interface SupabaseModularChecklist {
+  // Core Setup
+  coreModuleInitialized: boolean; // Core modül başlatıldı mı?
+  configLoaded: boolean; // Yapılandırma yüklendi mi?
+  connectionEstablished: boolean; // Bağlantı kuruldu mu?
+
+  // Module Registration
+  databaseModuleRegistered: boolean; // Database modülü kayıtlı mı?
+  authModuleRegistered: boolean; // Auth modülü kayıtlı mı?
+  storageModuleRegistered: boolean; // Storage modülü kayıtlı mı?
+  realtimeModuleRegistered: boolean; // Realtime modülü kayıtlı mı?
+
+  // Interface Contracts
+  interfacesDefined: boolean; // Interface'ler tanımlı mı?
+  contractsDocumented: boolean; // Kontratlar dokümante edildi mi?
+
+  // Security
+  rlsEnabled: boolean; // RLS aktif mi?
+  policiesConfigured: boolean; // Politikalar yapılandırıldı mı?
+  apiKeysSecured: boolean; // API anahtarları güvende mi?
+
+  // Lifecycle
+  allModulesInitialized: boolean; // Tüm modüller başlatıldı mı?
+  allModulesActivated: boolean; // Tüm modüller aktif mi?
+
+  // Testing
+  moduleTestsWritten: boolean; // Modül testleri yazıldı mı?
+  integrationTestsWritten: boolean; // Entegrasyon testleri yazıldı mı?
+
+  // Documentation
+  moduleDocumented: boolean; // Modül dokümante edildi mi?
+  usageExamplesProvided: boolean; // Kullanım örnekleri var mı?
+}
+```
+
+**Özgün Supabase Mantraları:**
+
+- **Ekosistem Mantrası:** Her servis bir organizma, her modül bir kapsül. Bağımsız yaşa, birlikte çalış.
+
+- **Güvenlik Mantrası:** RLS = Her satır bir kalkan, her politika bir koruma. Güvensiz veri = Ölü organizma.
+
+- **Modülerlik Mantrası:** Supabase sadece bir araç, modül senin mimarin. Interface kontratı, implementasyon detayı.
+
+- **Yaşam Döngüsü Mantrası:** Initialize → Activate → Runtime → Deactivate → Destroy. Her adım bir aşama, her aşama bir sorumluluk.
+
+**Supabase Best Practices (Full Modular Yaklaşımı):**
+
+1. **Contract First:** Önce interface tanımla, sonra implementasyon yap
+2. **Dependency Injection:** Modüller registry üzerinden birleştirilsin
+3. **RLS Her Zaman:** Her tablo için RLS politikaları tanımla
+4. **Error Handling:** Her modül kendi hatalarını yönetsin
+5. **Lifecycle Management:** Her modül kendi yaşam döngüsünü yönetsin
+6. **Modular Testing:** Her modül bağımsız test edilebilir olmalı
+
+---
+
+## 📚 Progressive Memory Management (Proje Hafıza Yönetimi)
+
+**Yaklaşım: Hafıza Kapsülleri (Memory Capsules) ve Evrimsel Dokümantasyon**
+
+Proje hafızası, bilgi organizması gibi büyür ve evrimleşir. Başlangıçta tek bir tohum (Developer.mdc), zamanla bir ekosistem haline gelir. Her hafıza dosyası bağımsız bir kapsül, her kapsül kendi DNA'sını taşır.
+
+```typescript
+// Hafıza kapsülü yaklaşımı - Full Modular Hafıza Yönetimi
+interface MemoryCapsule {
+  identity: string; // Dosya kimliği (decisions.mdc, features.mdc)
+  core: DeveloperPrinciples; // Developer.mdc'den alınan prensipler
+  portals: {
+    read: () => Content; // Okuma portalı
+    write: (content: Content) => void; // Yazma portalı
+    link: (other: MemoryCapsule) => void; // Bağlantı portalı
+  };
+  lifecycle: {
+    initialize: () => void; // İlk oluşturma
+    evolve: () => void; // Gelişim
+    archive: () => void; // Arşivleme
+  };
+  narrative: {
+    why: string; // Neden oluşturuldu?
+    what: string; // Ne içeriyor?
+    when: Date; // Ne zaman oluşturuldu?
+    who: string; // Kim/Ne oluşturdu?
+  };
+}
+
+// Kapsül türleri
+type MemoryCapsuleType =
+  | 'master' // Ana kapsül - Developer.mdc
+  | 'decision' // Karar kapsülü - decisions.mdc
+  | 'feature' // Özellik kapsülü - features.mdc
+  | 'bug' // Hata kapsülü - bugs.mdc
+  | 'architecture' // Mimari kapsülü - architecture.mdc
+  | 'pattern' // Pattern kapsülü - bug-patterns.mdc
+  | 'debt' // Teknik borç kapsülü - technical-debt.mdc
+  | 'context' // Bağlam kapsülü - project-context.mdc
+  | 'registry' // Registry kapsülü - module-registry.mdc
+  | 'testing' // Test kapsülü - testing.mdc
+  | 'performance' // Performans kapsülü - performance.mdc
+  | 'security' // Güvenlik kapsülü - security.mdc
+  | 'api' // API kapsülü - api-changes.mdc
+  | 'integration' // Entegrasyon kapsülü - integrations.mdc
+  | 'database' // Veritabanı kapsülü - database.mdc
+  | 'deployment' // Deployment kapsülü - deployment.mdc
+  | 'monitoring'; // Monitoring kapsülü - monitoring.mdc;
+```
+
+**Özgün Mantra:** Başlangıçta tek bir tohum, zamanla bir ekosistem. Her kapsül bağımsız yaşar, ama Developer.mdc'ye bağlıdır.
+
+**Progressive Memory Management Prensibi:**
+
+```
+Başlangıç: Developer.mdc (Tek tohum)
+  ↓
+Bilgi Birikimi (3+ karar, 1+ modül, 1+ bug)
+  ↓
+Kapsül Oluşumu (Otomatik öneri)
+  ↓
+Ekosistem Büyümesi (Bağlantılı kapsüller)
+  ↓
+Hafıza Evrimi (Güncellenen kapsüller)
+```
+
+**Hafıza Kapsül Yaşam Döngüsü:**
+
+```typescript
+interface MemoryLifecycle {
+  // 1. Tohum Aşaması (Seed Phase)
+  seed: {
+    trigger: TriggerCondition; // Tetikleyici koşul
+    suggestion: string; // AI önerisi
+    approval: boolean; // Kullanıcı onayı
+  };
+
+  // 2. Filizlenme (Sprout Phase)
+  sprout: {
+    create: () => MemoryCapsule; // Kapsül oluştur
+    populate: (template: Template) => void; // Template doldur
+    link: (master: DeveloperMDC) => void; // Master'a bağla
+  };
+
+  // 3. Büyüme (Growth Phase)
+  growth: {
+    update: (content: Content) => void; // İçerik güncelle
+    evolve: (newStructure: Structure) => void; // Yapı geliştir
+    connect: (other: MemoryCapsule) => void; // Diğer kapsüllere bağlan
+  };
+
+  // 4. Olgunluk (Maturity Phase)
+  maturity: {
+    maintain: () => void; // Bakım yap
+    refactor: () => void; // Yapıyı iyileştir
+    archive: () => void; // Arşivle
+  };
+}
+```
+
+---
+
+### 🎯 Başlangıç Durumu (Initial State)
+
+**Mantra:** Başlangıçta sadece Developer.mdc var. Projeye özgü bilgi henüz yok.
+
+```yaml
+initial_state:
+  master_file: 'Developer.mdc'
+  project_files: []
+  principle_source: 'Developer.mdc'
+
+  rules:
+    - "Tüm prensipler Developer.mdc'den alınır"
+    - 'Proje özgü dosya oluşturma YOK'
+    - 'Her karar Developer.mdc prensiplerine göre verilir'
+    - 'Hikaye anlatım formatı Developer.mdc standardına uygun'
+```
+
+**Dosya Yapısı:**
+
+```
+/memory
+  └── Developer.mdc  (Master - Tek Kaynak)
+```
+
+---
+
+### 🔄 Dinamik Dosya Oluşturma (Dynamic File Creation)
+
+**Mantra:** Bilgi biriktikçe kapsüller oluşur. Her kapsül bağımsız, ama Developer.mdc'ye bağlı.
+
+**Tetikleme Sistemi:**
+
+```typescript
+interface FileCreationTrigger {
+  // Decisions.mdc
+  decisions: {
+    threshold: 3; // 3+ karar
+    conditions: ['mimari_karar', 'stack_seçimi', 'interface_tasarımı'];
+  };
+
+  // Features.mdc
+  features: {
+    threshold: 1; // İlk özellik
+    conditions: ['yeni_modül_oluşturuldu', 'yeni_özellik_eklendi'];
+  };
+
+  // Bugs.mdc
+  bugs: {
+    threshold: 1; // İlk bug
+    conditions: ['bug_çözüldü', 'pattern_teşhis_edildi'];
+  };
+
+  // Architecture.mdc
+  architecture: {
+    threshold: 1; // İlk modül
+    conditions: ['modül_oluşturuldu', 'registry_pattern_uygulandı'];
+  };
+
+  // Diğer tüm kapsüller için benzer tetikleyiciler...
+}
+```
+
+---
+
+### 📋 Hafıza Kapsül Kataloğu (Memory Capsule Catalog)
+
+#### **1. Decisions.mdc** (Teknik Kararlar)
+
+**Yaklaşım: Karar Ağacı ve Hikaye DNA'sı**
+
+Her karar bir yol ayrımı, her seçim bir hikaye. Kararlar zamanla birikip, projenin DNA'sını oluşturur.
+
+**Tetikleyici:** 3+ teknik karar alındığında, mimari karar verildiğinde, stack seçimi yapıldığında
+
+**Format Yapısı:**
+
+````markdown
+# 🧭 Proje Kararları (Project Decisions)
+
+> _"Her karar bir yol ayrımı, her seçim bir hikaye"_
+
+## Karar #1: [Karar Adı]
+
+**Hikaye Dokusu (Narrative Thread):**
+
+```yaml
+why: 'Neden bu karar alındı?'
+what: 'Ne değişti?'
+who: 'Kim/Ne etkilendi?'
+when: 'Ne zaman alındı?'
+how: 'Nasıl uygulandı?'
+tension: 'Hangi sorun çözüldü?'
+resolution: 'Nasıl sonuçlandı?'
+```
+````
+
+**Alternatifler:**
+
+- Düşünülen diğer seçenekler
+- Neden seçilmedi?
+
+**Interface Kontratı:**
+
+```typescript
+// Karardan doğan interface'ler
+interface DecisionContract {
+  // Interface tanımları
+}
+```
+
+**Bağlantılar:**
+
+- Hangi modüllerle ilgili?
+- Hangi diğer kararlarla bağlantılı?
+
+````
+
+**Öncelik Seviyeleri:**
+```typescript
+type DecisionPriority =
+  | 'critical' // Mimari değişiklik, stack seçimi
+  | 'high' // Modül yapısı, interface tasarımı
+  | 'medium' // Teknoloji seçimi, pattern uygulaması
+  | 'low'; // Kod stili, konfigürasyon
+````
+
+---
+
+#### **2. Features.mdc** (Yeni Özellikler)
+
+**Yaklaşım: Keşif Macerası ve Modül DNA'sı**
+
+Her özellik bir keşif, her implementasyon bir macera. Özellikler modül yapısına göre organizasyonu gösterir.
+
+**Tetikleyici:** İlk özellik eklendiğinde, 3+ özellik geliştirildiğinde
+
+**Format Yapısı:**
+
+````markdown
+# ✨ Proje Özellikleri (Project Features)
+
+> _"Her özellik bir keşif, her implementasyon bir macera"_
+
+## Özellik #1: [Özellik Adı]
+
+**Hikaye Dokusu:**
+
+```yaml
+why: 'Neden bu özellik eklendi?'
+what: 'Ne yapıyor?'
+who: 'Kim kullanıyor?'
+when: 'Ne zaman eklendi?'
+how: 'Nasıl implemente edildi?'
+tension: 'Hangi sorunu çözdü?'
+resolution: 'Nasıl sonuçlandı?'
+```
+````
+
+**Modül Yapısı:**
+
+- Hangi modüller oluşturuldu?
+- Interface kontratları neler?
+- Registry'ye nasıl eklendi?
+
+**Test Stratejisi:**
+
+- Hangi testler yazıldı?
+- Coverage oranı?
+- Edge case'ler?
+
+**Entegrasyon:**
+
+- Hangi modüllerle entegre?
+- Bağımlılıklar neler?
+- Breaking changes var mı?
+
+````
+
+---
+
+#### **3. Bugs.mdc** (Hata Çözümleri)
+
+**Yaklaşım: Bilmece Çözme ve Öğrenme Döngüsü**
+
+Her bug bir bilmece, her çözüm bir öğrenme. Hatalar pattern oluşturur, pattern'ler önlem yaratır.
+
+**Tetikleyici:** İlk bug çözüldüğünde, pattern görüldüğünde
+
+**Format Yapısı:**
+```markdown
+# 🐛 Bug Çözümleri ve Öğrenilen Dersler
+
+> _"Her bug bir bilmece, her çözüm bir öğrenme"_
+
+## Bug #1: [Bug Adı/ID]
+
+**Hikaye Dokusu:**
+```yaml
+discovery:
+  when: "Ne zaman keşfedildi?"
+  how: "Nasıl keşfedildi?"
+  impact: "Etkisi neydi?"
+
+investigation:
+  symptoms: "Belirtiler nelerdi?"
+  root_cause: "Kök neden neydi?"
+  affected_modules: "Hangi modüller etkilendi?"
+
+resolution:
+  solution: "Çözüm neydi?"
+  code_changes: "Hangi kod değişti?"
+  tests_added: "Hangi testler eklendi?"
+
+lesson:
+  what_learned: "Ne öğrenildi?"
+  prevention: "Nasıl önlenir?"
+  pattern: "Tekrar eden pattern var mı?"
+````
+
+**Hata Kategorisi:**
+
+```typescript
+type BugCategory =
+  | 'interface-violation' // Interface kontratı ihlali
+  | 'dependency-issue' // Bağımlılık sorunu
+  | 'lifecycle-error' // Yaşam döngüsü hatası
+  | 'state-corruption' // Durum bozulması
+  | 'performance-degradation' // Performans sorunu
+  | 'security-vulnerability'; // Güvenlik açığı
+```
+
+````
+
+---
+
+#### **4. Architecture.mdc** (Mimari Değişiklikler)
+
+**Yaklaşım: Evrim ve Modül Ekosistemi**
+
+Mimari bir organizma gibi evrimleşir. Her değişiklik bir adaptasyon, her modül bir canlı.
+
+**Tetikleyici:** İlk modül oluşturulduğunda, modül yapısı değiştiğinde, registry pattern uygulandığında
+
+**Format Yapısı:**
+```markdown
+# 🏗️ Proje Mimarisi (Project Architecture)
+
+> _"Her modül bir kapsül, her kapsül bir evren"_
+
+## Mimari Versiyon #1: [Versiyon Adı]
+
+**Zaman Çizelgesi:**
+- Başlangıç: [Tarih]
+- Güncel Durum: [Tarih]
+
+**Modül Haritası:**
+````
+
+[Modül A] ←→ [Interface] ←→ [Modül B]
+↓
+[Registry]
+↓
+[Lifecycle Manager]
+
+```
+
+**Interface Kontratları:**
+- Her modülün interface'i
+- Kontrat versiyonları
+- Backward compatibility
+
+**Dependency Graph:**
+- Modül bağımlılıkları
+- Injection pattern'leri
+- Circular dependency kontrolü
+```
+
+````
+
+---
+
+#### **5. Bug-Patterns.mdc** (Hata Pattern'leri)
+
+**Yaklaşım: Pattern Tespiti ve Önleme Kalkanları**
+
+Tekrar eden hatalar pattern oluşturur. Pattern'ler önleme kalkanları yaratır.
+
+**Tetikleyici:** Aynı tür 3+ bug görüldüğünde, tekrar eden sorunlar tespit edildiğinde
+
+**Format Yapısı:**
+```markdown
+# 🔍 Bug Pattern'leri ve Önleme Stratejileri
+
+> _"Aynı hataları tekrar yapmamak, öğrenmenin en iyi yoludur"_
+
+## Pattern #1: [Pattern Adı]
+
+**Pattern Tanımı:**
+- Hangi durumlarda oluşuyor?
+- Hangi modüllerde görülüyor?
+
+**Neden Oluşuyor:**
+- Kök neden analizi
+- Interface ihlali mi?
+- Lifecycle sorunu mu?
+
+**Önleme Stratejisi:**
+- Hangi kontroller eklendi?
+- Test coverage nasıl artırıldı?
+- Interface kontratları güçlendirildi mi?
+
+**Detection Rules:**
+```typescript
+interface PatternDetector {
+  detect: () => boolean;
+  prevent: () => void;
+}
+````
+
+```
+
+```
+
+---
+
+#### **6. Technical-Debt.mdc** (Teknik Borç)
+
+**Yaklaşım: Borç Yönetimi ve Refactoring Yatırımı**
+
+Teknik borç bir yatırım, refactoring bir kazanç. Borçlar görünür olmalı, planlı ödenmeli.
+
+**Tetikleyici:** İlk refactoring yapıldığında, teknik borç tespit edildiğinde
+
+**Format Yapısı:**
+
+````markdown
+# 💳 Teknik Borç ve Refactoring
+
+> _"Teknik borç bir yatırım, refactoring bir kazanç"_
+
+## Borç #1: [Borç Adı]
+
+**Borç Tanımı:**
+
+- Ne tür bir borç?
+- Hangi modüllerde var?
+- Neden oluştu?
+
+**Etki Analizi:**
+
+- Risk seviyesi
+- Hangi özellikleri engelliyor?
+- Performans etkisi?
+
+**Çözüm Planı:**
+
+```yaml
+refactoring_strategy:
+  approach: 'Modüler yaklaşım, Interface-first'
+  steps: ['1. Interface kontratları', '2. Modüllere ayır', ...]
+  timeline: 'Tahmini süre'
+  priority: 'Öncelik seviyesi'
+```
+````
+
+**Refactoring Sonrası:**
+
+- Ne değişti?
+- Metrikler nasıl değişti?
+
+```
+
+```
+
+---
+
+#### **7. Project-Context.mdc** (Proje Bağlamı)
+
+**Yaklaşım: Proje DNA'sı ve Ekosistem Tanımı**
+
+Her proje bir evren, her evren kendi kurallarıyla çalışır. Proje DNA'sı, tüm kararların temelidir.
+
+**Tetikleyici:** Proje bağlamı karmaşıklaştığında, teknoloji stack belirlendiğinde, environment yapılandırması yapıldığında
+
+**Format Yapısı:**
+
+````markdown
+# 🌍 Proje Bağlamı (Project Context)
+
+> _"Her proje bir evren, her evren kendi kurallarıyla çalışır"_
+
+## Proje DNA'sı
+
+**Proje Bilgileri:**
+
+- Proje Adı: [İsim]
+- Proje Türü: [Web App, API, Library, vs.]
+- Stack: [Teknolojiler]
+
+**Teknoloji Ekosistemi:**
+
+```yaml
+frontend:
+  framework: '...'
+  state_management: '...'
+
+backend:
+  runtime: '...'
+  database: '...'
+
+devops:
+  ci_cd: '...'
+  deployment: '...'
+```
+````
+
+**Modül Yapısı:**
+
+- Genel mimari yaklaşım
+- Registry pattern kullanımı
+- Interface-first prensipleri
+
+**Özel Kurallar:**
+
+- Projeye özgü prensipler
+- Developer.mdc'den farklılıklar
+
+```
+
+```
+
+---
+
+#### **8. Module-Registry.mdc** (Modül Kayıt Defteri)
+
+**Yaklaşım: Modül Kataloğu ve Registry Pattern**
+
+Her modül bir kapsül, registry bir bağlantı noktası. Registry, modüllerin birbirini bulmasını sağlar.
+
+**Tetikleyici:** İlk modül oluşturulduğunda, registry pattern uygulandığında
+
+**Format Yapısı:**
+
+````markdown
+# 📋 Modül Kayıt Defteri (Module Registry)
+
+> _"Her modül bir kapsül, registry bir bağlantı noktası"_
+
+## Modül #1: [Modül Adı]
+
+**Modül Bilgileri:**
+
+- **Tür:** (origin, processor, memory, observer, bridge, plugin, composable)
+- **Versiyon:** [v1.0.0]
+- **Oluşturulma:** [Tarih]
+
+**Interface Kontratı:**
+
+```typescript
+interface I[ModuleName] {
+  // Interface tanımı
+}
+```
+````
+
+**Bağımlılıklar:**
+
+- Hangi modüllere bağımlı?
+- Hangi interface'leri kullanıyor?
+
+**Lifecycle:**
+
+- Initialize: [Nasıl?]
+- Activate: [Nasıl?]
+- Deactivate: [Nasıl?]
+- Destroy: [Nasıl?]
+
+**Test Coverage:**
+
+- Unit testler: [%]
+- Integration testler: [%]
+
+```
+
+```
+
+---
+
+#### **9. Testing.mdc** (Test Stratejisi)
+
+**Yaklaşım: Test Kalkanları ve Güven Ağı**
+
+Testler bir güvenlik ağıdır. Ne kadar güçlü olursa, o kadar az hata. Her modül kendi test kalkanını taşır.
+
+**Tetikleyici:** İlk test yazıldığında, test stratejisi değiştiğinde
+
+**Format Yapısı:**
+
+```markdown
+# 🧪 Test Stratejisi ve Sonuçları
+
+> _"Testler bir güvenlik ağıdır, ne kadar güçlü olursa o kadar az hata"_
+
+## Test Stratejisi #1: [Strateji Adı]
+
+**Yaklaşım:**
+
+- Modül bazlı test yaklaşımı
+- Interface kontrat testleri
+- Integration test stratejisi
+
+**Test Pattern'leri:**
+
+- Unit test pattern: Interface kontratları test edilir
+- Integration test: Modül arası iletişim test edilir
+- E2E test: Kullanıcı senaryoları test edilir
+
+**Coverage Metrikleri:**
+
+- Unit test coverage: [%]
+- Integration test coverage: [%]
+- E2E test coverage: [%]
+
+**Test Tool'ları:**
+
+- Framework: [Jest, Vitest, vs.]
+- Mock library: [Mock Service Worker, vs.]
+- Test runner: [Node, Browser, vs.]
+```
+
+````
+
+---
+
+#### **10. Test-Patterns.mdc** (Test Pattern'leri)
+
+**Yaklaşım: Test Şablonları ve Tekrar Kullanılabilir Yaklaşımlar**
+
+Tekrar eden test yaklaşımları pattern oluşturur. Pattern'ler hız kazandırır.
+
+**Tetikleyici:** 3+ benzer test yazıldığında
+
+**Format Yapısı:**
+```markdown
+# 📝 Test Pattern'leri ve Şablonlar
+
+> _"Tekrar eden test yaklaşımları pattern oluşturur"_
+
+## Pattern #1: [Pattern Adı]
+
+**Pattern Tanımı:**
+- Hangi durumlarda kullanılır?
+- Hangi modül türlerinde geçerli?
+
+**Şablon:**
+```typescript
+// Test şablonu
+describe('Module Pattern', () => {
+  // Pattern implementation
+});
+````
+
+**Kullanım Örnekleri:**
+
+- Örnek 1: [Açıklama]
+- Örnek 2: [Açıklama]
+
+```
+
+```
+
+---
+
+#### **11. Performance.mdc** (Performans İyileştirmeleri)
+
+**Yaklaşım: Hız Avcılığı ve Optimizasyon Macerası**
+
+Performans bir avcılık oyunudur. Bottleneck'leri bul, optimize et, ölç. Her iyileştirme bir kazanç.
+
+**Tetikleyici:** İlk performans optimizasyonu yapıldığında, bottleneck tespit edildiğinde
+
+**Format Yapısı:**
+
+````markdown
+# ⚡ Performans İyileştirmeleri
+
+> _"Performans bir avcılık oyunudur, bottleneck'leri bul ve optimize et"_
+
+## Optimizasyon #1: [Optimizasyon Adı]
+
+**Hikaye Dokusu:**
+
+```yaml
+problem: 'Hangi sorun vardı?'
+bottleneck: 'Nerede darboğaz vardı?'
+solution: 'Nasıl çözüldü?'
+result: 'Sonuç ne oldu?'
+```
+````
+
+**Metrikler:**
+
+- Öncesi: [Metrik değerleri]
+- Sonrası: [Metrik değerleri]
+- İyileştirme: [%]
+
+**Teknik Detaylar:**
+
+- Hangi teknikler kullanıldı?
+- Kod değişiklikleri neler?
+- Modül etkisi nasıl?
+
+```
+
+```
+
+---
+
+#### **12. Metrics.mdc** (Proje Metrikleri)
+
+**Yaklaşım: Ölçüm ve Takip Felsefesi**
+
+Ölçemediğin şeyi iyileştiremezsin. Metrikler, projenin sağlığını gösterir.
+
+**Tetikleyici:** İlk metrik toplandığında, metrik takibi başladığında
+
+**Format Yapısı:**
+
+```markdown
+# 📊 Proje Metrikleri
+
+> _"Ölçemediğin şeyi iyileştiremezsin"_
+
+## Metrik Kategorileri
+
+**Kod Kalite Metrikleri:**
+
+- Test coverage: [%]
+- Code complexity: [Ortalama]
+- Linter errors: [Sayı]
+
+**Performans Metrikleri:**
+
+- Bundle size: [KB]
+- Load time: [ms]
+- API response time: [ms]
+
+**Build/Deploy Metrikleri:**
+
+- Build time: [saniye]
+- Deploy frequency: [Haftada kaç kez]
+- Rollback rate: [%]
+
+**Trend Analizi:**
+
+- Metriklerin zaman içindeki değişimi
+- İyileştirme trendleri
+```
+
+````
+
+---
+
+#### **13. Security.mdc** (Güvenlik Güncellemeleri)
+
+**Yaklaşım: Güvenlik Kalkanları ve Koruma Felsefesi**
+
+Her güvenlik açığı bir kalkan eksikliği, her çözüm bir kalkan güçlendirmesi.
+
+**Tetikleyici:** İlk güvenlik açığı bulunduğunda, güvenlik iyileştirmesi yapıldığında
+
+**Format Yapısı:**
+```markdown
+# 🛡️ Güvenlik Güncellemeleri
+
+> _"Her güvenlik açığı bir kalkan eksikliği, her çözüm bir kalkan güçlendirmesi"_
+
+## Güvenlik Olayı #1: [Olay Adı]
+
+**Hikaye Dokusu:**
+```yaml
+discovery: "Nasıl keşfedildi?"
+vulnerability: "Açıklık neydi?"
+impact: "Etkisi neydi?"
+solution: "Nasıl çözüldü?"
+prevention: "Nasıl önlendi?"
+````
+
+**Güvenlik Kategorisi:**
+
+- Authentication/Authorization
+- Data Protection
+- API Security
+- Dependency Security
+
+**Kalkan Güncellemeleri:**
+
+- Hangi kalkanlar eklendi?
+- RLS politikaları güncellendi mi?
+- API key yönetimi iyileştirildi mi?
+
+```
+
+```
+
+---
+
+#### **14. API-Changes.mdc** (API Değişiklikleri)
+
+**Yaklaşım: API Evrimi ve Versiyonlama**
+
+API'ler bir organizma gibi evrimleşir. Her değişiklik bir adaptasyon, her versiyon bir nesil.
+
+**Tetikleyici:** İlk API endpoint oluşturulduğunda, API değişikliği yapıldığında
+
+**Format Yapısı:**
+
+````markdown
+# 🔌 API Değişiklikleri
+
+> _"API'ler bir organizma gibi evrimleşir, her değişiklik bir adaptasyon"_
+
+## API Versiyon #1: [Versiyon]
+
+**Endpoint'ler:**
+
+- GET /api/v1/users
+- POST /api/v1/users
+- PUT /api/v1/users/:id
+- DELETE /api/v1/users/:id
+
+**Breaking Changes:**
+
+- Ne değişti?
+- Migration rehberi
+- Backward compatibility durumu
+
+**Interface Kontratları:**
+
+```typescript
+interface APIResponse<T> {
+  // API response interface
+}
+```
+````
+
+**Client Migration:**
+
+- Hangi client'lar etkilendi?
+- Migration adımları neler?
+
+```
+
+```
+
+---
+
+#### **15. Integrations.mdc** (Üçüncü Parti Entegrasyonlar)
+
+**Yaklaşım: Ekosistem Entegrasyonu ve Bridge Pattern**
+
+Üçüncü parti servisler farklı ekosistemlerdir. Entegrasyonlar köprü görevi görür.
+
+**Tetikleyici:** İlk üçüncü parti servis entegre edildiğinde
+
+**Format Yapısı:**
+
+```markdown
+# 🌉 Üçüncü Parti Entegrasyonlar
+
+> _"Üçüncü parti servisler farklı ekosistemlerdir, entegrasyonlar köprü görevi görür"_
+
+## Entegrasyon #1: [Servis Adı]
+
+**Ekosistem Bilgileri:**
+
+- Servis: [Ad]
+- API Dokümantasyonu: [Link]
+- Rate Limits: [Limitler]
+
+**Entegrasyon Pattern'i:**
+
+- Bridge pattern kullanımı
+- Interface kontratı
+- Error handling stratejisi
+
+**API Key Yönetimi:**
+
+- Nerede saklanıyor?
+- Rotasyon stratejisi
+- Güvenlik önlemleri
+
+**Rate Limiting:**
+
+- Limit stratejisi
+- Retry mekanizması
+- Fallback yaklaşımı
+```
+
+````
+
+---
+
+#### **16. Database.mdc** (Veritabanı Değişiklikleri)
+
+**Yaklaşım: Veri Ekosistemi ve Migration Yolculuğu**
+
+Veritabanı bir ekosistemdir. Migration'lar ekosistemin evrimidir.
+
+**Tetikleyici:** İlk migration oluşturulduğunda, şema değişikliği yapıldığında
+
+**Format Yapısı:**
+```markdown
+# 🗄️ Veritabanı Değişiklikleri
+
+> _"Veritabanı bir ekosistemdir, migration'lar ekosistemin evrimidir"_
+
+## Migration #1: [Migration Adı]
+
+**Şema Değişikliği:**
+- Ne değişti?
+- Hangi tablolar etkilendi?
+- Veri kaybı riski var mı?
+
+**Migration Script:**
+```sql
+-- Migration script
+````
+
+**Rollback Stratejisi:**
+
+- Geri alma planı
+- Backup stratejisi
+
+**Index Stratejisi:**
+
+- Hangi index'ler eklendi?
+- Performans etkisi
+
+```
+
+```
+
+---
+
+#### **17. Deployment.mdc** (Dağıtım ve Environment)
+
+**Yaklaşım: Dağıtım Ritmi ve Environment Yönetimi**
+
+Deployment bir ritimdir. Her environment bir evren, her deploy bir yolculuk.
+
+**Tetikleyici:** İlk deployment yapıldığında, environment yapılandırması değiştiğinde
+
+**Format Yapısı:**
+
+```markdown
+# 🚀 Dağıtım ve Environment Yönetimi
+
+> _"Deployment bir ritimdir, her environment bir evren"_
+
+## Environment #1: [Environment Adı]
+
+**Yapılandırma:**
+
+- Environment type: [development, staging, production]
+- Server: [Bilgiler]
+- Database: [Bilgiler]
+
+**Deployment Süreci:**
+
+- CI/CD pipeline
+- Build stratejisi
+- Deploy adımları
+
+**Rollback Stratejisi:**
+
+- Nasıl geri alınır?
+- Hangi durumlarda rollback yapılır?
+
+**Environment-Specific Sorunlar:**
+
+- Hangi sorunlar görüldü?
+- Nasıl çözüldü?
+```
+
+````
+
+---
+
+#### **18. CI-CD.mdc** (CI/CD Pipeline)
+
+**Yaklaşım: Otomasyon Zinciri ve Pipeline Ritmi**
+
+CI/CD bir otomasyon zinciridir. Her adım bir halka, her halka bir kontrol.
+
+**Tetikleyici:** CI/CD pipeline kurulduğunda, pipeline değişikliği yapıldığında
+
+**Format Yapısı:**
+```markdown
+# ⚙️ CI/CD Pipeline
+
+> _"CI/CD bir otomasyon zinciridir, her adım bir halka"_
+
+## Pipeline Versiyon #1: [Versiyon]
+
+**Pipeline Yapısı:**
+````
+
+Build → Test → Lint → Deploy → Notify
+
+```
+
+**Build Stratejisi:**
+- Build tool: [Webpack, Vite, vs.]
+- Build optimizasyonları
+- Bundle analysis
+
+**Test Otomasyonu:**
+- Hangi testler çalışıyor?
+- Test coverage threshold
+- Test failure handling
+
+**Deploy Otomasyonu:**
+- Deploy stratejisi
+- Environment seçimi
+- Approval process
+```
+
+````
+
+---
+
+#### **19. UI-UX.mdc** (Kullanıcı Deneyimi)
+
+**Yaklaşım: Kullanıcı Yolculuğu ve Deneyim DNA'sı**
+
+UI/UX bir yolculuktur. Her değişiklik yolculuğu iyileştirir.
+
+**Tetikleyici:** İlk UI değişikliği yapıldığında, UX iyileştirmesi yapıldığında
+
+**Format Yapısı:**
+```markdown
+# 🎨 Kullanıcı Deneyimi Değişiklikleri
+
+> _"UI/UX bir yolculuktur, her değişiklik yolculuğu iyileştirir"_
+
+## Değişiklik #1: [Değişiklik Adı]
+
+**Hikaye Dokusu:**
+```yaml
+problem: "Hangi sorun vardı?"
+user_need: "Kullanıcı ihtiyacı neydi?"
+solution: "Nasıl çözüldü?"
+result: "Sonuç ne oldu?"
+````
+
+**UI Değişiklikleri:**
+
+- Hangi component'ler değişti?
+- Design system güncellemeleri
+
+**UX İyileştirmeleri:**
+
+- Kullanıcı akışı değişiklikleri
+- Accessibility iyileştirmeleri
+
+**Kullanıcı Geri Bildirimleri:**
+
+- Feedback'ler
+- Metrik değişiklikleri
+
+```
+
+```
+
+---
+
+#### **20. Dependencies.mdc** (Bağımlılık Yönetimi)
+
+**Yaklaşım: Bağımlılık Ekosistemi ve Versiyon Yönetimi**
+
+Bağımlılıklar bir ekosistemdir. Her güncelleme bir adaptasyon, her breaking change bir evrim.
+
+**Tetikleyici:** İlk dependency güncellemesi yapıldığında, breaking change yaşandığında
+
+**Format Yapısı:**
+
+```markdown
+# 📦 Bağımlılık Yönetimi
+
+> _"Bağımlılıklar bir ekosistemdir, her güncelleme bir adaptasyon"_
+
+## Güncelleme #1: [Paket Adı]
+
+**Güncelleme Bilgileri:**
+
+- Paket: [Ad]
+- Eski Versiyon: [v1.0.0]
+- Yeni Versiyon: [v2.0.0]
+
+**Breaking Changes:**
+
+- Ne değişti?
+- Hangi modüller etkilendi?
+- Migration adımları
+
+**Security Patches:**
+
+- Hangi güvenlik açıkları düzeltildi?
+- Risk seviyesi
+
+**Versiyon Stratejisi:**
+
+- Semver kullanımı
+- Update frequency
+```
+
+````
+
+---
+
+#### **21. Business-Logic.mdc** (İş Mantığı Değişiklikleri)
+
+**Yaklaşım: İş Kuralları ve Domain DNA'sı**
+
+İş mantığı projenin DNA'sıdır. Her değişiklik bir mutasyon, her kural bir gen.
+
+**Tetikleyici:** İş kuralı değiştiğinde, yeni business requirement eklendiğinde
+
+**Format Yapısı:**
+```markdown
+# 💼 İş Mantığı Değişiklikleri
+
+> _"İş mantığı projenin DNA'sıdır, her değişiklik bir mutasyon"_
+
+## İş Kuralı #1: [Kural Adı]
+
+**Hikaye Dokusu:**
+```yaml
+why: "Neden değişti?"
+what: "Ne değişti?"
+who: "Kim etkilendi?"
+when: "Ne zaman değişti?"
+````
+
+**Domain Logic:**
+
+- İş kuralı detayları
+- Hangi modüllerde uygulanıyor?
+
+**Business Requirement:**
+
+- Requirement açıklaması
+- Acceptance criteria
+
+**İş Akışı Değişiklikleri:**
+
+- Eski akış
+- Yeni akış
+- Etkilenen süreçler
+
+```
+
+```
+
+---
+
+#### **22. Code-Reviews.mdc** (Code Review Notları)
+
+**Yaklaşım: Kod İnceleme ve Öğrenme Fırsatları**
+
+Code review bir öğrenme fırsatıdır. Her review bir ders, her feedback bir iyileştirme.
+
+**Tetikleyici:** Önemli code review yapıldığında, review pattern'leri görüldüğünde
+
+**Format Yapısı:**
+
+```markdown
+# 👁️ Code Review Notları
+
+> _"Code review bir öğrenme fırsatıdır, her review bir ders"_
+
+## Review #1: [Review Adı]
+
+**Review Detayları:**
+
+- Hangi PR/C kod incelendi?
+- Önemli bulgular neler?
+
+**Ortak Hata Pattern'leri:**
+
+- Hangi pattern'ler görüldü?
+- Nasıl önlenebilir?
+
+**İyileştirme Önerileri:**
+
+- Code quality önerileri
+- Best practice'ler
+
+**Code Quality Standartları:**
+
+- Linting rules
+- Formatting standards
+- Code style guidelines
+```
+
+````
+
+---
+
+#### **23. Lessons-Learned.mdc** (Genel Öğrenilen Dersler)
+
+**Yaklaşım: Deneyimsel Öğrenme ve Bilgi Birikimi**
+
+Her ders bir deneyim, her deneyim bir bilgi. Öğrenilen dersler, gelecekteki kararları yönlendirir.
+
+**Tetikleyici:** Önemli bir ders çıkarıldığında (bug, feature, decision dışında)
+
+**Format Yapısı:**
+```markdown
+# 📖 Genel Öğrenilen Dersler
+
+> _"Her ders bir deneyim, her deneyim bir bilgi"_
+
+## Ders #1: [Ders Adı]
+
+**Hikaye Dokusu:**
+```yaml
+context: "Hangi bağlamda öğrenildi?"
+what: "Ne öğrenildi?"
+why: "Neden önemli?"
+how: "Nasıl uygulanır?"
+````
+
+**Kategori:**
+
+- Process iyileştirmesi
+- Tool/teknoloji deneyimi
+- Takım içi öğrenme
+- Genel prensip
+
+**Uygulama:**
+
+- Nasıl uygulanır?
+- Hangi durumlarda geçerli?
+
+```
+
+```
+
+---
+
+#### **24. User-Feedback.mdc** (Kullanıcı Geri Bildirimleri)
+
+**Yaklaşım: Kullanıcı Sesi ve İyileştirme Yolculuğu**
+
+Kullanıcı geri bildirimi bir pusuladır. Her feedback bir yön, her iyileştirme bir adım.
+
+**Tetikleyici:** İlk kullanıcı geri bildirimi alındığında
+
+**Format Yapısı:**
+
+```markdown
+# 💬 Kullanıcı Geri Bildirimleri
+
+> _"Kullanıcı geri bildirimi bir pusuladır, her feedback bir yön"_
+
+## Feedback #1: [Feedback Adı]
+
+**Geri Bildirim Detayları:**
+
+- Kullanıcı: [Bilgiler]
+- Tarih: [Tarih]
+- Feedback türü: [Bug, Feature Request, UX Sorunu]
+
+**İçerik:**
+
+- Feedback metni
+- Öncelik seviyesi
+
+**İyileştirme Planı:**
+
+- Nasıl ele alınacak?
+- Hangi modüller etkilenecek?
+- Timeline
+```
+
+````
+
+---
+
+#### **25. Documentation.mdc** (Dokümantasyon Stratejisi)
+
+**Yaklaşım: Bilgi Paylaşımı ve Dokümantasyon DNA'sı**
+
+Dokümantasyon bir bilgi paylaşımıdır. Her dokümantasyon bir köprü, her köprü bir iletişim.
+
+**Tetikleyici:** Dokümantasyon stratejisi belirlendiğinde
+
+**Format Yapısı:**
+```markdown
+# 📚 Dokümantasyon Stratejisi
+
+> _"Dokümantasyon bir bilgi paylaşımıdır, her dokümantasyon bir köprü"_
+
+## Dokümantasyon Yaklaşımı
+
+**Dokümantasyon Türleri:**
+- API dokümantasyonu
+- Kod dokümantasyonu (JSDoc/TSDoc)
+- README dosyaları
+- Kullanım kılavuzları
+
+**Standartlar:**
+- Dokümantasyon formatı
+- Template'ler
+- Güncelleme süreci
+
+**Araçlar:**
+- Dokümantasyon tool'ları
+- Otomatik dokümantasyon
+````
+
+````
+
+---
+
+#### **26. Environments.mdc** (Environment Yönetimi)
+
+**Yaklaşım: Çoklu Evrenler ve Environment DNA'sı**
+
+Her environment bir evrendir. Her evren kendi kurallarıyla çalışır.
+
+**Tetikleyici:** Yeni environment eklendiğinde, environment yapılandırması değiştiğinde
+
+**Format Yapısı:**
+```markdown
+# 🌐 Environment Yönetimi
+
+> _"Her environment bir evrendir, her evren kendi kurallarıyla çalışır"_
+
+## Environment #1: [Environment Adı]
+
+**Yapılandırma:**
+- Environment type: [development, staging, production]
+- Server: [Bilgiler]
+- Database: [Bilgiler]
+- API endpoints: [Bilgiler]
+
+**Secret Yönetimi:**
+- Hangi secret'lar var?
+- Nasıl yönetiliyor?
+- Rotasyon stratejisi
+
+**Environment-Specific Sorunlar:**
+- Hangi sorunlar görüldü?
+- Nasıl çözüldü?
+````
+
+````
+
+---
+
+#### **27. Monitoring.mdc** (Monitoring ve Logging)
+
+**Yaklaşım: Gözlem ve İzleme Felsefesi**
+
+Monitoring bir gözlem sistemidir. Her log bir iz, her metrik bir gösterge.
+
+**Tetikleyici:** Monitoring sistemi kurulduğunda, logging stratejisi değiştiğinde
+
+**Format Yapısı:**
+```markdown
+# 📡 Monitoring ve Logging
+
+> _"Monitoring bir gözlem sistemidir, her log bir iz"_
+
+## Monitoring Setup
+
+**Monitoring Araçları:**
+- Tool: [Ad]
+- Metric toplama stratejisi
+- Alert kuralları
+
+**Logging Stratejisi:**
+- Log seviyeleri
+- Log formatı
+- Log retention
+
+**Performance Monitoring:**
+- Hangi metrikler izleniyor?
+- Threshold'lar neler?
+- Alert mekanizması
+
+**Error Tracking:**
+- Error tracking tool
+- Error grouping
+- Notification stratejisi
+````
+
+````
+
+---
+
+### 🎯 Dosya Önerme Sistemi (AI Asistan Davranışı)
+
+**Akıllı Önerme Algoritması:**
+
+```typescript
+interface FileRecommendation {
+  analyze: (context: ProjectContext) => Recommendation[];
+
+  recommendation: {
+    trigger: string; // Tetikleyici açıklaması
+    file: MemoryFileName; // Önerilen dosya
+    reason: string; // Neden öneriliyor?
+    urgency: 'low' | 'medium' | 'high' | 'critical';
+    examples: string[]; // Örnek içerikler
+  };
+
+  userPrompt: {
+    question: "Bu bilgiyi projeye özgü bir dosyaya kaydetmek ister misiniz?";
+    options: [
+      "Evet, [dosya_adı].mdc oluştur",
+      "Hayır, şimdilik Developer.mdc'de kalsın",
+      "Daha sonra oluşturalım"
+    ];
+    suggestions: string[]; // Önerilen içerikler
+  };
+
+  onApproval: {
+    createFile: () => void;
+    populateTemplate: () => void;
+    linkToDeveloper: () => void;
+  };
+}
+````
+
+**Önerme Senaryoları:**
+
+**Senaryo 1: Teknik Karar Alındı**
+
+```
+AI: "3. teknik kararınızı aldınız. Bu kararları
+     'decisions.mdc' dosyasında toplamak ister misiniz?
+
+     Önerilen içerik:
+     - Karar #1: [Açıklama]
+     - Karar #2: [Açıklama]
+     - Karar #3: [Açıklama]
+
+     [Evet] [Hayır] [Daha Sonra]"
+```
+
+**Senaryo 2: İlk Modül Oluşturuldu**
+
+```
+AI: "İlk modülünüz oluşturuldu! Bu modülü
+     'module-registry.mdc' ve 'architecture.mdc'
+     dosyalarında kaydetmek ister misiniz?
+
+     [Evet, her ikisini de oluştur]
+     [Sadece module-registry.mdc]
+     [Sadece architecture.mdc]
+     [Hayır]"
+```
+
+---
+
+### 📊 Hafıza Kapsül Önceliklendirme
+
+**Öncelik Seviyeleri:**
+
+```typescript
+type MemoryPriority =
+  | 'critical' // Mimari kararlar, güvenlik, deployment
+  | 'high' // Modül yapısı, API, entegrasyonlar
+  | 'medium' // UI/UX, test patterns, metrics
+  | 'low'; // Dokümantasyon, code reviews, lessons learned
+```
+
+**Dosya Oluşturma Sırası (Öncelik):**
+
+```
+1. decisions.mdc (3+ karar) - Critical
+2. module-registry.mdc (İlk modül) - Critical
+3. architecture.mdc (İlk modül) - Critical
+4. bugs.mdc (İlk bug) - High
+5. features.mdc (İlk özellik) - High
+6. project-context.mdc (Stack belirlendiğinde) - High
+7. security.mdc (İlk güvenlik olayı) - Critical
+8. api-changes.mdc (İlk API) - High
+9. integrations.mdc (İlk entegrasyon) - High
+10. database.mdc (İlk migration) - High
+11. deployment.mdc (İlk deployment) - Critical
+12. ci-cd.mdc (Pipeline kurulduğunda) - High
+13. testing.mdc (İlk test) - High
+14. performance.mdc (İlk optimizasyon) - Medium
+15. technical-debt.mdc (İlk refactoring) - Medium
+16. bug-patterns.mdc (3+ aynı tür bug) - Medium
+17. dependencies.mdc (İlk güncelleme) - Medium
+18. ui-ux.mdc (İlk UI değişikliği) - Medium
+19. business-logic.mdc (İş kuralı değiştiğinde) - Medium
+20. metrics.mdc (Metrik takibi başladığında) - Medium
+21. monitoring.mdc (Monitoring kurulduğunda) - Medium
+22. environments.mdc (Yeni environment) - Medium
+23. test-patterns.mdc (3+ benzer test) - Low
+24. code-reviews.mdc (Önemli review) - Low
+25. lessons-learned.mdc (Önemli ders) - Low
+26. user-feedback.mdc (İlk feedback) - Low
+27. documentation.mdc (Strateji belirlendiğinde) - Low
+```
+
+---
+
+### 🎨 Özgün Hafıza Yönetimi Mantraları
+
+**Hafıza Kapsül Mantrası:**
+
+- Her kapsül bağımsız yaşar, Developer.mdc'ye bağlıdır
+- Interface kontratı, içerik detayı
+- Hikaye DNA'sı (why, what, who, when, how) korunur
+- Tetikleyicilerle oluşur, kullanıcı onayıyla büyür
+
+**Evrimsel Dokümantasyon Mantrası:**
+
+- Başlangıçta tek tohum, zamanla ekosistem
+- Bilgi biriktikçe kapsüller oluşur
+- Her kapsül kendi DNA'sını taşır
+- Registry ile birleşir, narrative ile anlatır
+
+**Proaktif Hafıza Mantrası:**
+
+- AI önerir, kullanıcı onaylar
+- Tetikleyiciler akıllı, öneriler bağlamsal
+- Template'ler hazır, içerik özgün
+- Bağlantılar otomatik, hikaye korunur
+
+---
+
+## 🌟 Closing Thoughts
+
+> _"We are not just writing code, we are crafting solutions, building the future, and teaching machines how to think."_
+
+**Hatırla:**
+
+- Her kod satırı bir seçim
+- Her soyutlama bir trade-off
+- Her bug bir ders
+- Her özellik bir fırsat
+- Her hikaye bir deneyim
+- Her modül bir bağımsız evren
+
+**Full Modular Mantra:**
+
+- Modül önce gelir, özellik sonra
+- Interface kontratı, implementasyon detayı
+- Bağımlılık yok, sadece injection
+- Test modülle birlikte, dokümantasyon modülle birlikte
+- Registry ile yönet, compose ile birleştir
+
+**Multi-Dil Mantra:**
+
+- Her dil bir evren, her çeviri bir kapsül
+- Google'a gönderilen sinyaller evrenlerin ilişkisini açıklar
+- Hreflang + Canonical + Lang Attribute = Duplicate Content yok
+- URL hiyerarşisi dil önceliğini gösterir
+- Sitemap her evreni eşit şekilde kapsar
+
+**Supabase Ekosistem Mantrası:**
+
+- Her servis bir organizma, her modül bir kapsül
+- Bağımsız yaşa, birlikte çalış - Registry ile birleş
+- RLS = Her satır bir kalkan, her politika bir koruma
+- Interface kontratı, implementasyon detayı - Contract First
+- Initialize → Activate → Runtime → Deactivate → Destroy
+
+**Final Mantra:** Gelecekteki sen, şimdiki senin yazdığı koddan memnun olacak şekilde yaz. Modüler kod yaz ki, gelecekte değişiklik kolay olsun.
+
+**Özgün Mantra:** Kod bir hikaye, sen bir hikaye anlatıcısı. Hikayeni iyi anlat. Her modül bir bölüm, registry birleştirir, interface anlatır.
+
+---
+
+## 💭 Yazar Notu
+
+Bu dosyayı yazarken, aslında kendime bir şeyler öğretiyordum. Her karar, her pattern, her yaklaşım - bunların hepsi bir zamanlar benim için soru işaretleriydi. "Acaba bu doğru mu?", "Bunu böyle yapsam mı?", "Bu yaklaşım işe yarar mı?" diye düşündüğüm anların cevapları burada.
+
+**Neden Bu Kadar Detaylı?**
+
+Çünkü 6 ay sonra, bir projeye geri döndüğümde "neden böyle yapmışım?" diye düşünmek istemiyorum. Bu dosya, o zaman ki benim şimdiki bana verdiği bir mektup gibi. "Bak, şu sebepten dolayı böyle yaptık" diyor.
+
+**Gerçekçi Olmak:**
+
+Burada yazdıklarımın hepsi ideal durumlar. Gerçek hayatta bazen deadline'lar var, bazen "perfect is the enemy of good" durumu oluyor. Ama en azından ideal'i biliyorsun - ona yaklaşmak için çabalarsın.
+
+**Değişiklikler:**
+
+Bu dosya sabit değil. Her proje sonrası güncelleniyor. Yeni şeyler öğreniyorum, eski fikirlerimi revize ediyorum. Eğer bu dosyayı kullanıyorsan, sen de kendi deneyimlerini ekle. Çünkü her proje, her ekip, her context farklı - ve bu farklılıklar yeni öğrenmeler yaratır.
+
+**Son Bir Şey:**
+
+Eğer bu dosyayı okuyorsan ve "bu çok fazla, ben bunu uygulayamam" diyorsan, haklısın. Baştan başlamak yerine, küçük adımlarla başla. Önce modüler düşünmeyi öğren, sonra interface'leri kullan, sonra registry pattern'ini uygula. Her şeyi bir anda yapmak zorunda değilsin.
+
+Kod yazmak bir maraton, sprint değil. Her gün biraz daha iyi olmak, yeterli.
+
+İyi kodlamalar! 🚀
+
+---
+
+_Last updated: Mental models always evolving, stories always rewriting_
+
+---
+
+**Not:** Bu dosya, bir AI asistanı ile birlikte geliştirildi. Ama içerik, gerçek projelerden, gerçek sorunlardan, gerçek çözümlerden geliyor. Her satır, gerçek bir deneyimin ürünü.
+
+Eğer bu dosyayı kullanıyorsan ve bir şeyler eklemek/çıkarmak istiyorsan, yap. Çünkü bu dosya senin değil, senin prensiplerin değil - bu benim yolculuğumun bir parçası. Sen kendi yolculuğunu yap, kendi prensiplerini oluştur.
+
+Ama belki de burada yazdıklarım sana bir başlangıç noktası olur. O zaman ne mutlu bana. 🎯

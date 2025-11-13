@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Modern arayüzlü, modüler mimariye sahip OBS çoklu platform streaming sistemi">
+    <meta name="keywords" content="OBS, streaming, multi-platform, YouTube, Twitch, Facebook, Kick">
+    <meta name="author" content="OBS Multi-Platform Streaming System">
+    <meta name="theme-color" content="#0a0e1a">
+    <title>OBS Multi-Platform Streaming System</title>
+    <link rel="icon" type="image/png" href="/static/icons/icon.png">
+    <link rel="icon" type="image/x-icon" href="/static/icons/icon.ico">
+    <link rel="apple-touch-icon" href="/static/icons/icon-256.png">
+    <link rel="stylesheet" href="/static/css/main.min.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-logo">
+                    <img src="/static/icons/icon.png" alt="OBS Multi-Platform Streaming" class="app-logo">
+                    <h1>OBS Multi-Platform Streaming</h1>
+                </div>
+                    <nav class="nav">
+                    <a href="#stream" class="nav-link active">Stream</a>
+                    <a href="#platforms" class="nav-link">Platforms</a>
+                    <a href="#settings" class="nav-link">Settings</a>
+                    <a href="#logs" class="nav-link">Logs</a>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="main">
+            <section id="stream" class="section">
+                <div class="section-header">
+                    <h2>Stream Management</h2>
+                    <div class="stream-status-badge">
+                        <span id="stream-status" class="status-badge status-idle">Idle</span>
+                    </div>
+                </div>
+                
+                <div class="stream-info-card">
+                    <div class="info-item">
+                        <label>RTMP Server URL:</label>
+                        <code id="rtmp-url">rtmp://localhost:1935/live/obs</code>
+                        <button class="btn-icon copy-rtmp-url-btn" data-copy-target="rtmp-url" title="Copy">
+                            📋
+                        </button>
+                    </div>
+                    <div class="info-item">
+                        <label>Stream Key:</label>
+                        <code id="stream-key">obs</code>
+                        <button class="btn-icon copy-stream-key-btn" data-copy-target="stream-key" title="Copy">
+                            📋
+                        </button>
+                    </div>
+                </div>
+
+                <div class="obs-stream-status">
+                    <div class="obs-status-indicator">
+                        <span class="obs-status-icon" id="obs-status-icon">⚫</span>
+                        <span class="obs-status-text" id="obs-status-text">Waiting for OBS stream...</span>
+                    </div>
+                    <div class="obs-status-details" id="obs-status-details"></div>
+                </div>
+            </section>
+            
+            <section id="platforms" class="section">
+                <div class="section-header">
+                    <h2>Platforms</h2>
+                    <button id="add-platform-btn" class="btn btn-primary">
+                        <span>➕</span> Add Platform
+                    </button>
+                </div>
+                
+                <div id="platforms-list" class="platforms-list-minimal">
+                    <div class="platforms-group streaming-platforms">
+                        <h3 class="platforms-group-title">🟢 Streaming</h3>
+                        <div id="streaming-platforms-list" class="platforms-group-list"></div>
+                    </div>
+                    <div class="platforms-group idle-platforms">
+                        <h3 class="platforms-group-title">⚫ Idle</h3>
+                        <div id="idle-platforms-list" class="platforms-group-list"></div>
+                    </div>
+                    <div class="empty-state" id="platforms-empty-state" style="display: none;">
+                        <p>No platforms configured. Click "Add Platform" to add a streaming platform.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="settings" class="section">
+                <div class="section-header">
+                    <h2>Settings</h2>
+                </div>
+                
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label>RTMP Server Host</label>
+                        <input type="text" id="rtmp-host" value="0.0.0.0" class="input" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>RTMP Server Port</label>
+                        <input type="number" id="rtmp-port" value="1935" class="input" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>App Name</label>
+                        <input type="text" id="rtmp-app" value="live" class="input" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Stream Key</label>
+                        <input type="text" id="rtmp-key" value="obs" class="input" autocomplete="off">
+                    </div>
+                    <div class="settings-actions">
+                        <button id="auto-detect-settings-btn" class="btn btn-secondary">
+                            <span>🔍</span> Auto-Detect from OBS
+                        </button>
+                        <button id="save-settings-btn" class="btn btn-primary">
+                            <span>💾</span> Save Settings
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="logs" class="section" style="display: none;">
+                <div class="section-header">
+                    <h2>Logs</h2>
+                    <button id="clear-logs-btn" class="btn btn-secondary">
+                        <span>🗑️</span> Clear Logs
+                    </button>
+                </div>
+                
+                <div id="logs-container" class="logs-container">
+                    <div class="logs-empty">
+                        <p>No logs available</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Platform Modal -->
+    <div id="platform-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Platform</h3>
+                <button class="modal-close" id="close-platform-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="platform-form">
+                    <input type="hidden" id="platform-id" />
+                    <div class="form-group">
+                        <label>Platform Name *</label>
+                        <select id="platform-name" class="input" required>
+                            <option value="">Select Platform</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="twitch">Twitch</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="kick">Kick</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>RTMP URL *</label>
+                        <input type="text" id="platform-rtmp-url" class="input" placeholder="rtmp://..." required autocomplete="url">
+                    </div>
+                    <div class="form-group">
+                        <label>Stream Key *</label>
+                        <div class="input-with-toggle">
+                            <input type="password" id="platform-stream-key" class="input" placeholder="Enter stream key" required autocomplete="off">
+                            <button type="button" class="btn-toggle toggle-password-btn" data-target="platform-stream-key">👁️</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Display Name (Optional)</label>
+                        <input type="text" id="platform-display-name" class="input" placeholder="e.g., Twitch xxx" autocomplete="off">
+                        <small class="form-hint">Custom name to display for this platform (e.g., "Twitch xxx", "YouTube Gaming")</small>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="platform-enabled" checked> Enabled
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-platform-modal-btn">Cancel</button>
+                <button type="submit" form="platform-form" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.min.js"></script>
+</body>
+</html>
+

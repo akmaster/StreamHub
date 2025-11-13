@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="OBS Multi-Platform Streaming System - Setup" />
+    <title>Kurulum - OBS Multi-Platform Streaming</title>
+    <link rel="icon" type="image/png" href="/static/icons/icon.png">
+    <link rel="icon" type="image/x-icon" href="/static/icons/icon.ico">
+    <link rel="apple-touch-icon" href="/static/icons/icon-256.png">
+    <link rel="stylesheet" href="/static/css/setup.css" />
+  </head>
+  <body>
+    <!-- Animated Background -->
+    <div class="setup-background">
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      <div class="gradient-orb orb-3"></div>
+      <div class="particles"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="setup-container" id="setup-container">
+      <!-- Logo Section -->
+      <div class="setup-logo">
+        <img src="/static/icons/icon.png" alt="OBS Multi-Platform Streaming" class="logo-image">
+        <h1 class="logo-text">OBS Multi-Platform</h1>
+        <p class="logo-subtitle">Streaming System</p>
+      </div>
+
+      <!-- Setup Content -->
+      <div class="setup-content">
+        <h2 class="setup-title" id="setup-title">Kurulum Yapılıyor...</h2>
+        <p class="setup-description" id="setup-description">
+          Lütfen bekleyin, sistem hazırlanıyor.
+        </p>
+
+        <!-- Progress Bar -->
+        <div class="setup-progress-container">
+          <div class="setup-progress-bar" id="setup-progress-bar">
+            <div class="setup-progress-fill" id="setup-progress-fill"></div>
+          </div>
+          <div class="setup-progress-text" id="setup-progress-text">0%</div>
+        </div>
+
+        <!-- Setup Steps -->
+        <div class="setup-steps" id="setup-steps">
+          <div class="setup-step" data-step="1">
+            <div class="step-icon">⚙️</div>
+            <div class="step-content">
+              <div class="step-title">Yapılandırma Dosyası</div>
+              <div class="step-status" id="step-1-status">Bekleniyor...</div>
+            </div>
+          </div>
+          <div class="setup-step" data-step="2">
+            <div class="step-icon">📁</div>
+            <div class="step-content">
+              <div class="step-title">Dosya Sistemi</div>
+              <div class="step-status" id="step-2-status">Bekleniyor...</div>
+            </div>
+          </div>
+          <div class="setup-step" data-step="3">
+            <div class="step-icon">🔌</div>
+            <div class="step-content">
+              <div class="step-title">Port Kontrolü</div>
+              <div class="step-status" id="step-3-status">Bekleniyor...</div>
+            </div>
+          </div>
+          <div class="setup-step" data-step="4">
+            <div class="step-icon">🚀</div>
+            <div class="step-content">
+              <div class="step-title">Sunucu Başlatılıyor</div>
+              <div class="step-status" id="step-4-status">Bekleniyor...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading Animation -->
+        <div class="setup-loading" id="setup-loading">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/js/setup.js"></script>
+  </body>
+</html>
