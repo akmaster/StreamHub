@@ -208,6 +208,8 @@ export class ElectronIPCModule implements IModule, IElectronIPC {
       // This will be handled by the window manager
       return { success: true };
     });
+
+    // Update check handlers (will be registered by main.ts after update module is available)
   }
 
   setAppModule(appModule: IElectronApp): void {

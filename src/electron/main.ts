@@ -16,6 +16,7 @@ import { fileURLToPath } from 'url';
 import { ElectronAppModule } from './modules/ElectronAppModule.js';
 import { ElectronWindowModule } from './modules/ElectronWindowModule.js';
 import { ElectronIPCModule } from './modules/ElectronIPCModule.js';
+import { ElectronUpdateModule } from './modules/ElectronUpdateModule.js';
 import { ModuleRegistry } from '../core/registry/ModuleRegistry.js';
 import { safeLog, safeError, setupElectronConsole } from '../utils/ElectronLogger.js';
 
@@ -61,6 +62,16 @@ async function initializeElectronApp(): Promise<void> {
       () => ipcModule,
       ['IElectronApp'],
       ['IElectronIPC'],
+      true
+    );
+
+    // Register Update Module (independent)
+    const updateModule = new ElectronUpdateModule();
+    registry.register(
+      'electron_update',
+      () => updateModule,
+      [],
+      ['ElectronUpdateModule'],
       true
     );
 
@@ -168,6 +179,18 @@ async function initializeElectronApp(): Promise<void> {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
           }
         });
+
+        // Register update check handlers
+        const updateModule = registry.resolve<ElectronUpdateModule>('ElectronUpdateModule');
+        if (updateModule) {
+          ipcModule.registerHandler('check-for-updates', async () => {
+            return await updateModule.checkForUpdatesManually();
+          });
+
+          ipcModule.registerHandler('get-update-status', async () => {
+            return updateModule.getUpdateStatus();
+          });
+        }
 
         safeLog('[Electron] ✅ Electron application initialized successfully');
       } catch (error) {
