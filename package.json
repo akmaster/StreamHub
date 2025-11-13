@@ -23,6 +23,7 @@
     "create-shortcut": "powershell -ExecutionPolicy Bypass -File scripts/create-desktop-shortcut.ps1",
     "build:electron": "npm run generate-icons && npm run build && electron-builder",
     "build:electron:win": "npm run generate-icons && npm run build && electron-builder --win",
+    "generate-checksums": "powershell -ExecutionPolicy Bypass -File scripts/generate-checksums.ps1",
     "build:electron:mac": "npm run generate-icons && npm run build && electron-builder --mac",
     "build:electron:linux": "npm run generate-icons && npm run build && electron-builder --linux",
     "dev:electron": "npm run build && electron .",

@@ -358,6 +358,90 @@ Proje modüler mimariye sahiptir:
 3. Stream Manager, stream'i tüm aktif platformlara yönlendirir (FFmpeg kullanarak)
 4. Her platform adaptörü, kendi RTMP URL'ine stream'i gönderir
 
+## Release Doğrulama (Verification)
+
+Bu proje açık kaynak kodludur. İndirdiğiniz EXE dosyalarının gerçekten bu GitHub repository'sinden derlendiğini doğrulamak için aşağıdaki yöntemleri kullanabilirsiniz.
+
+### 🔐 Checksum Doğrulama
+
+Her release'de `checksums.txt` dosyası yayınlanır. Bu dosya, tüm EXE dosyalarının SHA256 hash değerlerini içerir.
+
+#### Windows'ta Doğrulama:
+
+1. İndirdiğiniz EXE dosyasının hash'ini hesaplayın:
+```powershell
+Get-FileHash -Path "OBS Multi-Platform Streaming Setup 1.0.0.exe" -Algorithm SHA256
+```
+
+2. GitHub Releases'daki `checksums.txt` dosyasındaki hash ile karşılaştırın.
+
+3. Hash'ler eşleşiyorsa, dosya doğrulanmış demektir ✅
+
+#### Linux/Mac'te Doğrulama:
+
+```bash
+sha256sum "OBS Multi-Platform Streaming Setup 1.0.0.exe"
+```
+
+### 🏗️ Kaynak Koddan Derleme
+
+En güvenilir yöntem, kaynak koddan kendiniz derlemektir:
+
+```bash
+# 1. Repository'yi klonlayın
+git clone https://github.com/YOUR_USERNAME/SON4.git
+cd SON4
+
+# 2. Bağımlılıkları yükleyin
+npm install
+
+# 3. Projeyi derleyin
+npm run build
+
+# 4. Windows EXE oluşturun
+npm run build:electron:win
+
+# 5. Oluşturulan dosyalar build-electron/ klasöründe olacak
+```
+
+### 🤖 Otomatik Build (GitHub Actions)
+
+Her release, GitHub Actions ile otomatik olarak derlenir. Bu sayede:
+- ✅ Build süreci şeffaftır
+- ✅ Build log'ları herkese açıktır
+- ✅ Reproducible builds (tekrarlanabilir derlemeler)
+- ✅ Checksum'lar otomatik oluşturulur
+
+GitHub Actions build log'larını görmek için:
+1. Repository'deki **Actions** sekmesine gidin
+2. İlgili release'in build workflow'unu açın
+3. Build log'larını inceleyin
+
+### 📋 Release Checklist
+
+Her release'de şunlar sağlanır:
+
+- ✅ **Checksums**: Tüm dosyalar için SHA256 hash'leri
+- ✅ **Build Logs**: GitHub Actions build log'ları
+- ✅ **Source Code**: Tam kaynak kod erişimi
+- ✅ **Reproducible**: Aynı kaynak kod aynı çıktıyı üretir
+
+### ⚠️ Güvenlik Notları
+
+1. **Sadece GitHub Releases'dan indirin**: Resmi release sayfasından indirmeyi unutmayın
+2. **Checksum'ları kontrol edin**: Her zaman checksum'ları doğrulayın
+3. **Kaynak koddan derleyin**: Maksimum güvenlik için kaynak koddan kendiniz derleyin
+4. **Build log'larını inceleyin**: GitHub Actions log'larını kontrol edin
+
+### 🔍 Şüpheli Durumlar
+
+Eğer aşağıdaki durumlardan biriyle karşılaşırsanız, dosyayı kullanmayın:
+
+- ❌ Checksum'lar eşleşmiyorsa
+- ❌ GitHub Releases'da dosya yoksa
+- ❌ Build log'ları eksikse
+- ❌ Dosya beklenmedik bir yerden geliyorsa
+
 ## Lisans
 
 MIT
