@@ -62,7 +62,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
-        with:
           files: |
             build-electron/*.exe
             checksums.txt
