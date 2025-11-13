@@ -181,6 +181,13 @@ body::after {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.header-content .nav {
+    flex: 1;
+    justify-content: center;
 }
 
 /* Header Logo */
@@ -240,6 +247,150 @@ body::after {
 .nav-link.active {
     background: var(--accent-primary);
     color: white;
+}
+
+/* Window Controls - Modern Glassmorphism Design */
+.window-controls {
+    display: flex !important;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: auto;
+    -webkit-app-region: no-drag;
+    padding: 0.25rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1001 !important;
+    position: relative;
+    flex-shrink: 0;
+    min-width: fit-content;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.window-control-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    pointer-events: auto !important;
+    -webkit-app-region: no-drag;
+}
+
+.window-control-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.window-control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.window-control-btn:hover::before {
+    opacity: 1;
+}
+
+.window-control-btn:active {
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.window-control-btn svg {
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.window-control-btn:hover svg {
+    transform: scale(1.1);
+}
+
+.window-control-close:hover {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
+    border-color: rgba(255, 59, 48, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+}
+
+.window-control-minimize:hover,
+.window-control-maximize:hover,
+.window-control-restore:hover {
+    background: rgba(74, 158, 255, 0.15);
+    color: var(--accent-primary);
+    border-color: rgba(74, 158, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.15);
+}
+
+.window-control-fullscreen:hover {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--accent-success);
+    border-color: rgba(52, 199, 89, 0.3);
+    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.15);
+}
+
+.window-control-fullscreen svg {
+    position: absolute;
+}
+
+.window-control-fullscreen .fullscreen-icon,
+.window-control-fullscreen .fullscreen-exit-icon {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.window-control-fullscreen.active .fullscreen-icon {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.window-control-fullscreen.active .fullscreen-exit-icon {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Electron app only - hide on web */
+body:not(.electron-app) .window-controls {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Ensure window controls are visible in Electron */
+body.electron-app .window-controls,
+.electron-app .window-controls,
+html.electron-app .window-controls {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1001 !important;
 }
 
 /* Main Content */

@@ -12,7 +12,8 @@
  * @capsuleType processor (İşlemci - güncelleme işlemlerini yönetir)
  */
 
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 import { app, dialog } from 'electron';
 import { IModule, CapsuleType } from '../../core/interfaces/IModule.js';
 import { ModuleLifecycle } from '../../core/lifecycle/ModuleLifecycle.js';

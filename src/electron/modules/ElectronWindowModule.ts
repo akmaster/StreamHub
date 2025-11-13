@@ -246,6 +246,44 @@ export class ElectronWindowModule implements IModule, IElectronWindow {
     }
   }
 
+  async minimize(): Promise<void> {
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.minimize();
+    }
+  }
+
+  async maximize(): Promise<void> {
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.maximize();
+    }
+  }
+
+  async restore(): Promise<void> {
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.restore();
+    }
+  }
+
+  async isMaximized(): Promise<boolean> {
+    if (this.window && !this.window.isDestroyed()) {
+      return this.window.isMaximized();
+    }
+    return false;
+  }
+
+  async setFullScreen(fullscreen: boolean): Promise<void> {
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.setFullScreen(fullscreen);
+    }
+  }
+
+  async isFullScreen(): Promise<boolean> {
+    if (this.window && !this.window.isDestroyed()) {
+      return this.window.isFullScreen();
+    }
+    return false;
+  }
+
   isVisible(): boolean {
     return this.window !== null && !this.window.isDestroyed() && this.window.isVisible();
   }

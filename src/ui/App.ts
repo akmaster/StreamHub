@@ -84,13 +84,43 @@ export function createApp(registry: ModuleRegistry): Express {
   // API routes with rate limiting
   app.use('/api', apiLimiter, apiRouter(registry));
 
-  // Static files - support for pkg executable and normal execution
+  // Static files - support for Electron, pkg executable and normal execution
+  // Electron packaged: files are in ASAR archive, __dirname automatically resolves ASAR
   // pkg executable: files are in snapshot (process.pkg.entrypoint directory)
   // Normal execution: files are in dist/ui/frontend
   let staticPath: string;
   let indexPath: string;
   
-  if (typeof process !== 'undefined' && (process as any).pkg) {
+  // Check if running in Electron
+  const isElectron = typeof process !== 'undefined' && 
+    (process.versions && (process.versions as any).electron);
+  
+  if (isElectron) {
+    // Electron app - __dirname automatically resolves ASAR in packaged apps
+    // In packaged apps: __dirname points to app.asar/dist/ui
+    // In development: __dirname points to dist/ui
+    // __dirnameResolved is already at dist/ui level (where App.js is located)
+    // So frontend is at dist/ui/frontend
+    const basePath = __dirnameResolved;
+    staticPath = join(basePath, 'frontend', 'static');
+    indexPath = join(basePath, 'frontend', 'index.html');
+    
+    // If not found, try alternative paths (for edge cases)
+    if (!existsSync(staticPath)) {
+      const altPaths = [
+        join(dirname(basePath), 'ui', 'frontend', 'static'),
+        join(basePath, '..', 'ui', 'frontend', 'static'),
+      ];
+      
+      for (const altPath of altPaths) {
+        if (existsSync(altPath)) {
+          staticPath = altPath;
+          indexPath = join(dirname(altPath), 'index.html');
+          break;
+        }
+      }
+    }
+  } else if (typeof process !== 'undefined' && (process as any).pkg) {
     // Running as pkg executable - use process.cwd() or executable directory
     // pkg assets are unpacked to process.cwd() or executable directory
     const exeDir = process.cwd();

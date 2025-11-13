@@ -1766,6 +1766,188 @@ document.querySelectorAll('.nav-link').forEach(link => {
         window.LogViewer.clearLogs();
     });
     
+    // Window Controls (Electron only)
+    // Check for Electron API immediately and on load
+    const initWindowControls = () => {
+        // Check for Electron API - try multiple methods
+        const isElectron = window.electronAPI || 
+                          (window.process && window.process.versions && window.process.versions.electron) ||
+                          (navigator.userAgent && navigator.userAgent.includes('Electron'));
+        
+        if (isElectron || window.electronAPI) {
+            // Add electron-app class to body for CSS
+            document.body.classList.add('electron-app');
+            
+            // Ensure window controls are visible with inline styles (highest priority)
+            const windowControls = document.getElementById('window-controls');
+            if (windowControls) {
+                windowControls.style.setProperty('display', 'flex', 'important');
+                windowControls.style.setProperty('visibility', 'visible', 'important');
+                windowControls.style.setProperty('opacity', '1', 'important');
+                windowControls.style.setProperty('z-index', '1001', 'important');
+            }
+            
+            // Minimize button
+        const minimizeBtn = document.getElementById('window-minimize');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Minimize button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowMinimize) {
+                        console.error('[Window Controls] windowMinimize method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowMinimize();
+                    console.log('[Window Controls] Minimize result:', result);
+                } catch (error) {
+                    console.error('[Window Controls] Failed to minimize window:', error);
+                }
+            });
+            console.log('[Window Controls] Minimize button listener attached');
+        } else {
+            console.error('[Window Controls] Minimize button not found!');
+        }
+        
+        // Maximize/Restore button
+        const maximizeBtn = document.getElementById('window-maximize');
+        const restoreBtn = document.getElementById('window-restore');
+        
+        const updateMaximizeButton = async () => {
+            try {
+                if (!window.electronAPI || !window.electronAPI.windowIsMaximized) {
+                    return;
+                }
+                const result = await window.electronAPI.windowIsMaximized();
+                const maximized = result?.maximized || result === true;
+                if (maximized) {
+                    maximizeBtn?.style.setProperty('display', 'none', 'important');
+                    restoreBtn?.style.setProperty('display', 'flex', 'important');
+                } else {
+                    maximizeBtn?.style.setProperty('display', 'flex', 'important');
+                    restoreBtn?.style.setProperty('display', 'none', 'important');
+                }
+            } catch (error) {
+                console.error('Failed to check window state:', error);
+            }
+        };
+        
+        if (maximizeBtn) {
+            maximizeBtn.addEventListener('click', async () => {
+                try {
+                    await window.electronAPI.windowMaximize();
+                    await updateMaximizeButton();
+                } catch (error) {
+                    console.error('Failed to maximize window:', error);
+                }
+            });
+        }
+        
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', async () => {
+                try {
+                    await window.electronAPI.windowRestore();
+                    await updateMaximizeButton();
+                } catch (error) {
+                    console.error('Failed to restore window:', error);
+                }
+            });
+        }
+        
+        // Check initial state
+        updateMaximizeButton();
+        
+        // Update on window resize (to catch maximize/restore from other sources)
+        window.addEventListener('resize', () => {
+            setTimeout(updateMaximizeButton, 100);
+        });
+        
+        // Fullscreen button
+        const fullscreenBtn = document.getElementById('window-fullscreen');
+        if (fullscreenBtn) {
+            const updateFullscreenButton = async () => {
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowIsFullscreen) {
+                        return;
+                    }
+                    const result = await window.electronAPI.windowIsFullscreen();
+                    const fullscreen = result?.fullscreen || result === true;
+                    if (fullscreen) {
+                        fullscreenBtn.classList.add('active');
+                        const fullscreenIcon = fullscreenBtn.querySelector('.fullscreen-icon');
+                        const fullscreenExitIcon = fullscreenBtn.querySelector('.fullscreen-exit-icon');
+                        if (fullscreenIcon) fullscreenIcon.style.setProperty('display', 'none', 'important');
+                        if (fullscreenExitIcon) fullscreenExitIcon.style.setProperty('display', 'block', 'important');
+                    } else {
+                        fullscreenBtn.classList.remove('active');
+                        const fullscreenIcon = fullscreenBtn.querySelector('.fullscreen-icon');
+                        const fullscreenExitIcon = fullscreenBtn.querySelector('.fullscreen-exit-icon');
+                        if (fullscreenIcon) fullscreenIcon.style.setProperty('display', 'block', 'important');
+                        if (fullscreenExitIcon) fullscreenExitIcon.style.setProperty('display', 'none', 'important');
+                    }
+                } catch (error) {
+                    console.error('Failed to check fullscreen state:', error);
+                }
+            };
+            
+            fullscreenBtn.addEventListener('click', async () => {
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowIsFullscreen) {
+                        return;
+                    }
+                    const result = await window.electronAPI.windowIsFullscreen();
+                    const fullscreen = result?.fullscreen || result === true;
+                    await window.electronAPI.windowSetFullscreen(!fullscreen);
+                    await updateFullscreenButton();
+                } catch (error) {
+                    console.error('Failed to toggle fullscreen:', error);
+                }
+            });
+            
+            // Check initial state
+            updateFullscreenButton();
+        }
+        
+        // Close button
+        const closeBtn = document.getElementById('window-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Close button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowClose) {
+                        console.error('[Window Controls] windowClose method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowClose();
+                    console.log('[Window Controls] Close result:', result);
+                } catch (error) {
+                    console.error('[Window Controls] Failed to close window:', error);
+                }
+            });
+            console.log('[Window Controls] Close button listener attached');
+        } else {
+            console.error('[Window Controls] Close button not found!');
+        }
+        } else {
+            // Not Electron - hide window controls
+            const windowControls = document.getElementById('window-controls');
+            if (windowControls) {
+                windowControls.style.display = 'none';
+            }
+        }
+    };
+    
+    // Initialize window controls
+    initWindowControls();
+    
+    // Also try on DOMContentLoaded if not already loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWindowControls);
+    }
+    
     // Show stream section by default
     document.getElementById('stream').style.display = 'block';
 });

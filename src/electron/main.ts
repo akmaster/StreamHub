@@ -192,6 +192,68 @@ async function initializeElectronApp(): Promise<void> {
           });
         }
 
+        // Register window control handlers
+        ipcModule.registerHandler('window-minimize', async () => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            await mainWindow.minimize();
+            return { success: true };
+          }
+          return { success: false };
+        });
+
+        ipcModule.registerHandler('window-maximize', async () => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            await mainWindow.maximize();
+            return { success: true };
+          }
+          return { success: false };
+        });
+
+        ipcModule.registerHandler('window-restore', async () => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            await mainWindow.restore();
+            return { success: true };
+          }
+          return { success: false };
+        });
+
+        ipcModule.registerHandler('window-close', async () => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            await mainWindow.close();
+            return { success: true };
+          }
+          return { success: false };
+        });
+
+        ipcModule.registerHandler('window-is-maximized', async () => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            return { maximized: await mainWindow.isMaximized() };
+          }
+          return { maximized: false };
+        });
+
+        ipcModule.registerHandler('window-set-fullscreen', async (_event, fullscreen: boolean) => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            await mainWindow.setFullScreen(fullscreen);
+            return { success: true };
+          }
+          return { success: false };
+        });
+
+        ipcModule.registerHandler('window-is-fullscreen', async () => {
+          const mainWindow = appModule.getWindow('main') || appModule.getWindow('intro');
+          if (mainWindow) {
+            return { fullscreen: await mainWindow.isFullScreen() };
+          }
+          return { fullscreen: false };
+        });
+
         safeLog('[Electron] ✅ Electron application initialized successfully');
       } catch (error) {
         safeError('[Electron] ❌ Failed to initialize windows:', error);

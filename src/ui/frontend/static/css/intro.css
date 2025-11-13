@@ -619,7 +619,7 @@ body {
     padding: 0.75rem 1.5rem;
     font-size: 0.95rem;
     font-weight: 600;
-    z-index: 101;
+    z-index: 1002 !important; /* Higher than window controls (1001) */
     opacity: 0;
     animation: fadeIn 0.5s ease-out 0.5s forwards;
     white-space: nowrap;
@@ -635,6 +635,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    pointer-events: auto !important;
 }
 
 .nav-button-skip:hover {
@@ -744,4 +745,148 @@ body {
 /* Keyboard Navigation Hints */
 .intro-container:focus {
     outline: none;
+}
+
+/* Window Controls */
+.window-controls {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    display: flex !important;
+    align-items: center;
+    gap: 0.25rem;
+    z-index: 1001 !important; /* Lower than skip button (1002) */
+    -webkit-app-region: no-drag;
+    padding: 0.25rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.window-control-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--intro-text-secondary);
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    pointer-events: auto !important;
+    -webkit-app-region: no-drag;
+}
+
+.window-control-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.window-control-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--intro-text-primary);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.window-control-btn:hover::before {
+    opacity: 1;
+}
+
+.window-control-btn:active {
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.window-control-btn svg {
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.window-control-btn:hover svg {
+    transform: scale(1.15);
+}
+
+.window-control-close:hover {
+    background: rgba(255, 59, 48, 0.3);
+    color: #ff3b30;
+    border-color: rgba(255, 59, 48, 0.5);
+    box-shadow: 0 6px 20px rgba(255, 59, 48, 0.3);
+}
+
+.window-control-minimize:hover,
+.window-control-maximize:hover,
+.window-control-restore:hover {
+    background: rgba(74, 158, 255, 0.25);
+    color: var(--intro-accent-primary);
+    border-color: rgba(74, 158, 255, 0.5);
+    box-shadow: 0 6px 20px rgba(74, 158, 255, 0.25);
+}
+
+.window-control-fullscreen:hover {
+    background: rgba(52, 199, 89, 0.25);
+    color: var(--accent-success);
+    border-color: rgba(52, 199, 89, 0.5);
+    box-shadow: 0 6px 20px rgba(52, 199, 89, 0.25);
+}
+
+.window-control-fullscreen svg {
+    position: absolute;
+}
+
+.window-control-fullscreen .fullscreen-icon,
+.window-control-fullscreen .fullscreen-exit-icon {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.window-control-fullscreen.active .fullscreen-icon {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.window-control-fullscreen.active .fullscreen-exit-icon {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Electron app only - hide on web */
+body:not(.electron-app) .window-controls {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Ensure window controls are visible in Electron */
+body.electron-app .window-controls,
+.electron-app .window-controls,
+html.electron-app .window-controls {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1001 !important;
 }

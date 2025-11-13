@@ -16,6 +16,12 @@ export interface IElectronWindow {
   hide(): Promise<void>;
   close(): Promise<void>;
   focus(): Promise<void>;
+  minimize(): Promise<void>;
+  maximize(): Promise<void>;
+  restore(): Promise<void>;
+  isMaximized(): Promise<boolean>;
+  setFullScreen(fullscreen: boolean): Promise<void>;
+  isFullScreen(): Promise<boolean>;
   isVisible(): boolean;
   loadURL(url: string): Promise<void>;
   getWindowStatus(): Promise<WindowStatus>;

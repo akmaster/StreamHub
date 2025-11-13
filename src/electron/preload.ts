@@ -17,6 +17,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Intro complete notification
   introComplete: () => ipcRenderer.invoke('intro-complete'),
   
+  // Window controls
+  windowMinimize: () => ipcRenderer.invoke('window-minimize'),
+  windowMaximize: () => ipcRenderer.invoke('window-maximize'),
+  windowRestore: () => ipcRenderer.invoke('window-restore'),
+  windowClose: () => ipcRenderer.invoke('window-close'),
+  windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+  windowSetFullscreen: (fullscreen: boolean) => ipcRenderer.invoke('window-set-fullscreen', fullscreen),
+  windowIsFullscreen: () => ipcRenderer.invoke('window-is-fullscreen'),
+  
   // Platform information
   platform: process.platform,
   versions: process.versions,

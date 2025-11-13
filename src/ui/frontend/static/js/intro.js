@@ -345,9 +345,245 @@ class IntroScreen {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         new IntroScreen();
+        initWindowControls();
     });
 } else {
     new IntroScreen();
+    initWindowControls();
+}
+
+// Window Controls (Electron only)
+function initWindowControls() {
+    // Check for Electron API - try multiple methods
+    const isElectron = window.electronAPI || 
+                      (window.process && window.process.versions && window.process.versions.electron) ||
+                      (navigator.userAgent && navigator.userAgent.includes('Electron'));
+    
+    console.log('[Window Controls] Electron detection:', {
+        hasElectronAPI: !!window.electronAPI,
+        hasProcess: !!(window.process && window.process.versions && window.process.versions.electron),
+        userAgent: navigator.userAgent.includes('Electron'),
+        isElectron: isElectron
+    });
+    
+    if (isElectron || window.electronAPI) {
+        // Add electron-app class to body for CSS
+        document.body.classList.add('electron-app');
+        
+        // Ensure window controls are visible with inline styles (highest priority)
+        const windowControls = document.getElementById('window-controls');
+        if (windowControls) {
+            windowControls.style.setProperty('display', 'flex', 'important');
+            windowControls.style.setProperty('visibility', 'visible', 'important');
+            windowControls.style.setProperty('opacity', '1', 'important');
+            windowControls.style.setProperty('z-index', '1001', 'important');
+            windowControls.style.setProperty('pointer-events', 'auto', 'important');
+        }
+        
+        // Verify electronAPI methods exist
+        if (!window.electronAPI) {
+            console.error('[Window Controls] window.electronAPI is not available!');
+            return;
+        }
+        
+        console.log('[Window Controls] Available methods:', {
+            windowMinimize: typeof window.electronAPI.windowMinimize,
+            windowMaximize: typeof window.electronAPI.windowMaximize,
+            windowRestore: typeof window.electronAPI.windowRestore,
+            windowClose: typeof window.electronAPI.windowClose,
+            windowIsMaximized: typeof window.electronAPI.windowIsMaximized,
+            windowSetFullscreen: typeof window.electronAPI.windowSetFullscreen,
+            windowIsFullscreen: typeof window.electronAPI.windowIsFullscreen
+        });
+        
+        // Minimize button
+        const minimizeBtn = document.getElementById('window-minimize');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Minimize button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowMinimize) {
+                        console.error('[Window Controls] windowMinimize method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowMinimize();
+                    console.log('[Window Controls] Minimize result:', result);
+                } catch (error) {
+                    console.error('[Window Controls] Failed to minimize window:', error);
+                }
+            });
+            console.log('[Window Controls] Minimize button listener attached');
+        } else {
+            console.error('[Window Controls] Minimize button not found!');
+        }
+        
+        // Maximize/Restore button
+        const maximizeBtn = document.getElementById('window-maximize');
+        const restoreBtn = document.getElementById('window-restore');
+        
+        const updateMaximizeButton = async () => {
+            try {
+                if (!window.electronAPI || !window.electronAPI.windowIsMaximized) {
+                    console.warn('[Window Controls] windowIsMaximized method not available');
+                    return;
+                }
+                const result = await window.electronAPI.windowIsMaximized();
+                const maximized = result?.maximized || result === true;
+                console.log('[Window Controls] Window maximized state:', maximized);
+                if (maximized) {
+                    maximizeBtn?.style.setProperty('display', 'none', 'important');
+                    restoreBtn?.style.setProperty('display', 'flex', 'important');
+                } else {
+                    maximizeBtn?.style.setProperty('display', 'flex', 'important');
+                    restoreBtn?.style.setProperty('display', 'none', 'important');
+                }
+            } catch (error) {
+                console.error('[Window Controls] Failed to check window state:', error);
+            }
+        };
+        
+        if (maximizeBtn) {
+            maximizeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Maximize button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowMaximize) {
+                        console.error('[Window Controls] windowMaximize method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowMaximize();
+                    console.log('[Window Controls] Maximize result:', result);
+                    await updateMaximizeButton();
+                } catch (error) {
+                    console.error('[Window Controls] Failed to maximize window:', error);
+                }
+            });
+            console.log('[Window Controls] Maximize button listener attached');
+        } else {
+            console.error('[Window Controls] Maximize button not found!');
+        }
+        
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Restore button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowRestore) {
+                        console.error('[Window Controls] windowRestore method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowRestore();
+                    console.log('[Window Controls] Restore result:', result);
+                    await updateMaximizeButton();
+                } catch (error) {
+                    console.error('[Window Controls] Failed to restore window:', error);
+                }
+            });
+            console.log('[Window Controls] Restore button listener attached');
+        } else {
+            console.error('[Window Controls] Restore button not found!');
+        }
+        
+        // Check initial state
+        updateMaximizeButton();
+        
+        // Update on window resize
+        window.addEventListener('resize', () => {
+            setTimeout(updateMaximizeButton, 100);
+        });
+        
+        // Fullscreen button
+        const fullscreenBtn = document.getElementById('window-fullscreen');
+        if (fullscreenBtn) {
+            const updateFullscreenButton = async () => {
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowIsFullscreen) {
+                        console.warn('[Window Controls] windowIsFullscreen method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowIsFullscreen();
+                    const fullscreen = result?.fullscreen || result === true;
+                    console.log('[Window Controls] Window fullscreen state:', fullscreen);
+                    if (fullscreen) {
+                        fullscreenBtn.classList.add('active');
+                        const fullscreenIcon = fullscreenBtn.querySelector('.fullscreen-icon');
+                        const fullscreenExitIcon = fullscreenBtn.querySelector('.fullscreen-exit-icon');
+                        if (fullscreenIcon) fullscreenIcon.style.setProperty('display', 'none', 'important');
+                        if (fullscreenExitIcon) fullscreenExitIcon.style.setProperty('display', 'block', 'important');
+                    } else {
+                        fullscreenBtn.classList.remove('active');
+                        const fullscreenIcon = fullscreenBtn.querySelector('.fullscreen-icon');
+                        const fullscreenExitIcon = fullscreenBtn.querySelector('.fullscreen-exit-icon');
+                        if (fullscreenIcon) fullscreenIcon.style.setProperty('display', 'block', 'important');
+                        if (fullscreenExitIcon) fullscreenExitIcon.style.setProperty('display', 'none', 'important');
+                    }
+                } catch (error) {
+                    console.error('[Window Controls] Failed to check fullscreen state:', error);
+                }
+            };
+            
+            fullscreenBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Fullscreen button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowIsFullscreen) {
+                        console.error('[Window Controls] windowIsFullscreen method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowIsFullscreen();
+                    const fullscreen = result?.fullscreen || result === true;
+                    console.log('[Window Controls] Current fullscreen state:', fullscreen, 'toggling to:', !fullscreen);
+                    const toggleResult = await window.electronAPI.windowSetFullscreen(!fullscreen);
+                    console.log('[Window Controls] Toggle fullscreen result:', toggleResult);
+                    await updateFullscreenButton();
+                } catch (error) {
+                    console.error('[Window Controls] Failed to toggle fullscreen:', error);
+                }
+            });
+            console.log('[Window Controls] Fullscreen button listener attached');
+            
+            // Check initial state
+            updateFullscreenButton();
+        } else {
+            console.error('[Window Controls] Fullscreen button not found!');
+        }
+        
+        // Close button
+        const closeBtn = document.getElementById('window-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Window Controls] Close button clicked');
+                try {
+                    if (!window.electronAPI || !window.electronAPI.windowClose) {
+                        console.error('[Window Controls] windowClose method not available');
+                        return;
+                    }
+                    const result = await window.electronAPI.windowClose();
+                    console.log('[Window Controls] Close result:', result);
+                } catch (error) {
+                    console.error('[Window Controls] Failed to close window:', error);
+                }
+            });
+            console.log('[Window Controls] Close button listener attached');
+        } else {
+            console.error('[Window Controls] Close button not found!');
+        }
+        
+        console.log('[Window Controls] Initialization complete');
+    } else {
+        // Not Electron - hide window controls
+        const windowControls = document.getElementById('window-controls');
+        if (windowControls) {
+            windowControls.style.display = 'none';
+        }
+    }
 }
 
 // Export for Electron IPC
